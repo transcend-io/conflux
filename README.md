@@ -1,4 +1,4 @@
-<b>con·flux</b>
+<h3 style="margin-bottom:0">con·flux</h3>
 
 /ˈkänˌfləks/
 
