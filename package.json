@@ -1,0 +1,39 @@
+{
+  "name": "@transcend-io/conflux",
+  "version": "0.0.0",
+  "description": "Build zip files out of readable streams in the browser",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/transcend-io/conflux.git"
+  },
+  "keywords": [
+    "zip",
+    "browser",
+    "streams",
+    "readable",
+    "files"
+  ],
+  "contributers": [{
+    "name": "Jimmy Wärting",
+    "email": "jimmy@warting.se",
+    "url": "https://github.com/jimmywarting"
+  }, {
+    "name": "Eli Grey",
+    "email": "eli@transcend.io",
+    "url": "https://github.com/eligrey"
+  }, {
+    "name": "Ben Brook",
+    "email": "ben@transcend.io",
+    "url": "https://github.com/bencmbrook"
+  }],
+  "license": "MIT",
+  "author": "@transcend-io",
+  "bugs": {
+    "url": "https://github.com/transcend-io/conflux/issues"
+  },
+  "homepage": "https://github.com/transcend-io/conflux#readme"
+}
