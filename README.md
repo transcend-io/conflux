@@ -1,4 +1,4 @@
-<b>con·flux</b>
+### con·flux
 
 /ˈkänˌfləks/
 
