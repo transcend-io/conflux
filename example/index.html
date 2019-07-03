@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+  </head>
+  <body>
+    <script type="module">
+      import Zip from '../write.js'
+
+      const { readable, writable } = new Zip()
+
+      const writer = writable.getWriter()
+
+      new Response(readable, { headers: { 'content-type': 'application/zip' }})
+        .blob()
+        .then(URL.createObjectURL)
+        .then(console.log)
+
+      writer.write({
+        name: '/cat.txt',
+        lastModified: new Date(0),
+        stream: () => new Response('mjau').body
+      })
+
+      writer.close()
+    </script>
+  </body>
+</html>
