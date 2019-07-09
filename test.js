@@ -1,5 +1,6 @@
-import test from 'ava';
+const test = require('tape');
 
 test('autopass', (t) => {
-  t.pass();
+  t.pass('asdf');
+  t.end();
 });

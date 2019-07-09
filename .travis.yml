@@ -1,13 +1,18 @@
 language: node_js
 node_js:
-  - lts/*
+- lts/*
 install:
-  - npm ci
-  - npm install -g codecov
+- npm ci
+- npm install -g codecov
 cache:
   directories:
   - "$HOME/.npm"
 script:
-  # - istanbul cover ./node_modules/mocha/bin/_mocha --reporter lcovonly -- -R spec
-  - npm test
-  - codecov
+- npm run browser-test
+env:
+  global:
+  - secure: jKrFsUha4L0i5ijJSJ73qK8PwaVvjfWvEgtXSDgnxfrBwq70ejHPgthYLzmNxjRjENvpmmyleQBiWX79/eGkgtu2BntJdJPNoM3RtZ75fquLjcX5O3PRIoUPkvxdNuHLF/V5GEzYav3GA1YkyoKDnuEkOONYVITSyCIbVkJRD6jxPMy8r5qPJcePDbIN8GgLuzVa+Vb8s7fcnOkrYZqTmgM38hVfrVIH+LeIUjFa5yVT9bMcpowWFxltYUvVnIUOJiriBZtsF7nBAe50CpIjJar2EEbwg/8JbZznNwblMgQwv0+MfauXvM2+5nB2NGUzk92ExWxfSl67htlMHnE0tPtTNVH0z4eQVsxOzfTb+1Z3y98JV88PZyGqzXcbpHHOByQ17h1HEQeWxlZaPvQZLCoW90ntR1tUBI+9FZwpO++iSZF6G/0i3sK/oe0pG0qNXTkQ6flA3Oiv1cwOl7qJFsPFgmIi/9WXCjAKhX71+dMVEhfljwFygtXhUSB36JNZ7kb+1E0e1gIReEFoP9qvBQC+WrWEmTQMOehOICLMPKd3eNBtFwSHmDUFSlVVd93SVCfDOc4CKS60WJklC0gopD6E86oV5KztA9S/yh6ytCR8kMV8AlPuep1BiLLoCeQINX+GGn2d+oWFmENkcyQBJiTEnQZbkNwtYMXaiSNNZwE=
+  - secure: NFJAOvahn2nSReXMDs8GcmDf+l5IGjFzjM1w5PkWYOS+ERA+vD3v/hjRJ0LmA+d1grFoQKFf8mOFaI78pjGnn+5htbOB+3IVkoZNXUlXTkEjSJgLIlAJvO7Ore25sitg28c8GjEm6y5DWFNoEtJCZ9f4rK9NBNf1E8zfhbjNBVV8UZVS+561wbk28XrUMFAAUuNUGGob5Vn3DMOAqlPYxfmCREm4/KdQ9fyvz5rl8XzlQ7jcM7jXoahQ4Rn13BOygZNE9aRKWxGZvyR7KjWC9rwYh+Osj8sKfJvdAk/41OLWtgDNG+4AjNrRJ5YFjQizlXpLnYuafq1OEB5F0Di4pcPodZd9aEFJjwVuZw5K2L2DMKXM1kWqueQn1H2CvIMuKNyEQ8RFkaYPgJuQNcfw72bxGU9T3by1UGWhXOt+agSTZaah5khtYa8eaA1FxHzFgwhC+GMS4v+39N+qVChCEwpUDJXIW30TZg3uFdPaK2Y1irQ6+hJXkwBw4OBv8N4SJKoCJmCkwLr6tcbn0/JCTl7zoXJzWZHtLPcMzDq6PYOi+zRV2H1uCk05zjDs+grEUSntsfTlrivqRJdNE8t2hjTW6q/TWwPKMoLB8MwYiZfxcy3nPDQu/FrdqwglKvUlJHR/kUryIS2V0oYKM8SUVJYCLU8lJ/o6y2xVG8hPYy0=
+after_success:
+- npm run coverage
+- codecov

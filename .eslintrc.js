@@ -1,9 +1,8 @@
 module.exports = {
   env: {
-    node: true,
+    browser: true,
   },
   extends: [
     "airbnb-base",
-    "plugin:ava/recommended",
   ],
 };
