@@ -10,19 +10,12 @@ function getDataHelper (byteLength) {
   }
 }
 
-const wm = new WeakMap()
-
-const transformer = {
-  /**
-   * @param  {ReadableStreamDefaultController} ctrl
-   */
-  start (ctrl) {
-    wm.set(ctrl, {
-      files: Object.create(null),
-      filenames: [],
-      offset: 0
-    })
-  },
+class ZipTransformer {
+  constructor () {
+    this.files = Object.create(null)
+    this.filenames = []
+    this.offset = 0
+  }
 
   /**
    * [transform description]
@@ -34,18 +27,17 @@ const transformer = {
   async transform (entry, ctrl) {
     let name = entry.name.trim()
     const date = new Date(typeof entry.lastModified === 'undefined' ? Date.now() : entry.lastModified)
-    const _ = wm.get(ctrl)
 
     if (entry.directory && !name.endsWith('/')) name += '/'
-    if (_.files[name]) ctrl.abort(new Error('File already exists.'))
+    if (this.files[name]) ctrl.abort(new Error('File already exists.'))
 
     const nameBuf = encoder.encode(name)
-    _.filenames.push(name)
+    this.filenames.push(name)
 
-    const zipObject = _.files[name] = {
+    const zipObject = this.files[name] = {
       directory: !!entry.directory,
       nameBuf,
-      offset: _.offset,
+      offset: this.offset,
       comment: encoder.encode(entry.comment || ''),
       compressedLength: 0,
       uncompressedLength: 0,
@@ -68,7 +60,7 @@ const transformer = {
     data.array.set(header.array, 4)
     data.array.set(nameBuf, 30)
 
-    _.offset += data.array.length
+    this.offset += data.array.length
     ctrl.enqueue(data.array)
 
     const footer = getDataHelper(16)
@@ -96,30 +88,27 @@ const transformer = {
       footer.view.setUint32(12, zipObject.uncompressedLength, true)
     }
 
-    _.offset += zipObject.compressedLength + 16
+    this.offset += zipObject.compressedLength + 16
 
     ctrl.enqueue(footer.array)
-  },
+  }
 
   /**
    * @param  {ReadableStreamDefaultController} ctrl
    */
   flush (ctrl) {
-    const _ = wm.get(ctrl)
-    wm.delete(ctrl)
-
     let length = 0
     let index = 0
     let file
 
-    for (let fileName of _.filenames) {
-      file = _.files[fileName]
+    for (let fileName of this.filenames) {
+      file = this.files[fileName]
       length += 46 + file.nameBuf.length + file.comment.length
     }
 
     const data = getDataHelper(length + 22)
-    for (let fileName of _.filenames) {
-      file = _.files[fileName]
+    for (let fileName of this.filenames) {
+      file = this.files[fileName]
       data.view.setUint32(index, 0x504b0102)
       data.view.setUint16(index + 4, 0x1400)
       data.array.set(file.header.array, index + 6)
@@ -133,17 +122,22 @@ const transformer = {
       index += 46 + file.nameBuf.length + file.comment.length
     }
     data.view.setUint32(index, 0x504b0506)
-    data.view.setUint16(index + 8, _.filenames.length, true)
-    data.view.setUint16(index + 10, _.filenames.length, true)
+    data.view.setUint16(index + 8, this.filenames.length, true)
+    data.view.setUint16(index + 10, this.filenames.length, true)
     data.view.setUint32(index + 12, length, true)
-    data.view.setUint32(index + 16, _.offset, true)
+    data.view.setUint32(index + 16, this.offset, true)
     ctrl.enqueue(data.array)
+
+    // cleanup
+    this.files = Object.create(null)
+    this.filenames = []
+    this.offset = 0
   }
 }
 
 class Writer extends TransformStream {
   constructor () {
-    super(transformer)
+    super(new ZipTransformer())
   }
 }
 
