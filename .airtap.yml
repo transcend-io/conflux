@@ -1,6 +1,6 @@
 browsers:
   - name: chrome
-    version: 27..latest
+    version: latest
   - name: ie
     version: latest
   - name: iphone
