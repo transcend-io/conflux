@@ -4,7 +4,10 @@
   "description": "Build zip files out of readable streams in the browser",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test.js",
+    "browser-test-2": "airtap test.js",
+    "browser-test": "airtap --loopback airtap.local --coverage test.js",
+    "coverage": "nyc report --reporter=text-lcov > coverage.lcov"
   },
   "repository": {
     "type": "git",
@@ -17,23 +20,36 @@
     "readable",
     "files"
   ],
-  "contributers": [{
-    "name": "Jimmy Wärting",
-    "email": "jimmy@warting.se",
-    "url": "https://github.com/jimmywarting"
-  }, {
-    "name": "Eli Grey",
-    "email": "eli@transcend.io",
-    "url": "https://github.com/eligrey"
-  }, {
-    "name": "Ben Brook",
-    "email": "ben@transcend.io",
-    "url": "https://github.com/bencmbrook"
-  }],
+  "contributers": [
+    {
+      "name": "Jimmy Wärting",
+      "email": "jimmy@warting.se",
+      "url": "https://github.com/jimmywarting"
+    },
+    {
+      "name": "Eli Grey",
+      "email": "eli@transcend.io",
+      "url": "https://github.com/eligrey"
+    },
+    {
+      "name": "Ben Brook",
+      "email": "ben@transcend.io",
+      "url": "https://github.com/bencmbrook"
+    }
+  ],
   "license": "MIT",
   "author": "@transcend-io",
   "bugs": {
     "url": "https://github.com/transcend-io/conflux/issues"
   },
-  "homepage": "https://github.com/transcend-io/conflux#readme"
+  "homepage": "https://github.com/transcend-io/conflux#readme",
+  "devDependencies": {
+    "airtap": "^2.0.2",
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.18.0",
+    "istanbul": "^0.4.5",
+    "nyc": "^14.1.1",
+    "tape": "^4.11.0"
+  }
 }

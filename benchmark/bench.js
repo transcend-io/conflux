@@ -121,9 +121,13 @@ suite
   })
   // add listeners
   .on('cycle', event => {
+    let p = document.createElement('p');
+    p.innerText = String(event.target);
+    document.body.appendChild(p);
     console.log(String(event.target))
   })
   .on('complete', function () {
+    document.getElementById('loading').remove();
     console.log('Fastest is ' + this.filter('fastest').map('name'))
   })
 
