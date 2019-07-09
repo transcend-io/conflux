@@ -9,4 +9,4 @@
 [![codecov](https://codecov.io/gh/transcend-io/conflux/branch/master/graph/badge.svg)](https://codecov.io/gh/transcend-io/conflux)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/8315091c-798e-4a3e-bdf9-2fd21c7a025e/deploy-status)](https://app.netlify.com/sites/conflux/deploys)
 
-[![Sauce Test Status](https://saucelabs.com/browser-matrix/bencmbrook.svg)](https://saucelabs.com/u/bencmbrook)
+[![Sauce Test Status](https://saucelabs.com/browser-matrix/bencmbrook.svg?auth=c2b96594999df3d684c9af8d63a0c61e)](https://saucelabs.com/u/bencmbrook)
