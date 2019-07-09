@@ -1,5 +1,5 @@
 import test from 'ava';
 
-test('autopass', t => {
+test('autopass', (t) => {
   t.pass();
 });
