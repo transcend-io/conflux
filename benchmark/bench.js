@@ -1,4 +1,4 @@
-import Conflux from '../write';
+import Conflux from '../write.js';
 
 const {
   WritableStream,
@@ -12,7 +12,7 @@ const {
 zip.useWebWorkers = false;
 
 const uint8 = new Uint8Array(256);
-for (let i = 0; i < uint8.length; i += 1) uint8[i] = i;
+for (let i = 0; i < uint8.length; i++) uint8[i] = i;
 
 const blob = new Blob(new Array(2000).fill(uint8));
 let text = null;
