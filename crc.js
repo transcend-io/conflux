@@ -4,7 +4,8 @@ class Crc32 {
   }
 
   append(data) {
-    let crc = this.crc | 0; const { table } = this;
+    let crc = this.crc | 0;
+    const { table } = this;
     for (let offset = 0, len = data.length | 0; offset < len; offset += 1) {
       crc = (crc >>> 8) ^ table[(crc ^ data[offset]) & 0xFF];
     }
@@ -15,6 +16,7 @@ class Crc32 {
     return ~this.crc;
   }
 }
+
 Crc32.prototype.table = (() => {
   let i; let j; let t; const table = [];
   for (i = 0; i < 256; i += 1) {
