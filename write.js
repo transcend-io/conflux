@@ -49,10 +49,6 @@ class ZipTransformer {
     const { header } = zipObject;
     const data = getDataHelper(30 + nameBuf.length);
 
-    if (entry.level !== 0 && !entry.directory) {
-      header.view.setUint16(4, 0x0800);
-    }
-
     header.view.setUint32(0, 0x14000808);
     header.view.setUint16(6, (((date.getHours() << 6) | date.getMinutes()) << 5) | date.getSeconds() / 2, true);
     header.view.setUint16(8, ((((date.getFullYear() - 1980) << 4) | (date.getMonth() + 1)) << 5) | date.getDate(), true);
