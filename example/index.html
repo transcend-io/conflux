@@ -31,12 +31,6 @@
           const blob = new Blob([uint8], { type: 'application/zip' })
           const a = document.createElement('a')
           const entries = await Reader(blob)
-          const entry = entries[1]
-          console.log('file name', entry.name)
-          console.log('file size', entry.size)
-          console.log('file offset', entry.offset)
-          const dataOffset = entry.offset + entry.filenameLength + 30
-          console.log(await blob.slice(dataOffset, dataOffset + entry.size).text())
           a.href = URL.createObjectURL(blob)
           a.innerText = a.download = 'Archive.zip'
 
@@ -53,15 +47,13 @@
       pump()
 
       writer.write({
-        comment: 'dog',
         name: '/dog.txt',
         lastModified: new Date(0),
         stream: () => new Response('woff').body
       })
 
       writer.write({
-        comment: 'cat',
-        name: '/catch.txt',
+        name: '/cat.txt',
         lastModified: new Date(0),
         stream: () => new Response('mjau').body
       })
