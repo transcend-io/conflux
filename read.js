@@ -7,12 +7,11 @@ const EOCDR_MAX = EOCDR_MIN + ZIP_COMMENT_MAX
 const decoder = new TextDecoder()
 
 class Entry {
-  constructor (dataView, fileLike) {
-    // if (dataView.getUint32(0) !== 0x504b0102) {
-    //   throw new Error('ERR_BAD_FORMAT')
-    // }
+  constructor (dataView) {
+    if (dataView.getUint32(0) !== 0x504b0102) {
+      throw new Error('ERR_BAD_FORMAT')
+    }
     this.dataView = dataView
-    this._fileLike = fileLike
   }
   get version () {
     return this.dataView.getUint16(6, true)
@@ -32,9 +31,6 @@ class Entry {
   get crc32 () {
     return this.dataView.getUint32(16, true)
   }
-  get compressedSize () {
-    return this.dataView.getUint32(20, true)
-  }
   get filenameLength () {
     return this.dataView.getUint16(28, true)
   }
@@ -51,7 +47,7 @@ class Entry {
     return this.dataView.getUint16(42, true)
   }
   get zip64 () {
-    return this.compressedSize === 0xFFFFFFFF ||
+    return this.size === 0xFFFFFFFF ||
            this.uncompressedSize === 0xFFFFFFFF
   }
 
@@ -147,7 +143,6 @@ async function * seekEOCDR (fileLike) {
   const uint16e = (b, n) => b[n] | (b[n + 1] << 8)
 
   for (let i = 0, index = 0; i < fileslength; i++) {
-    console.log(uint16e(bytes, 30))
     const size =
       uint16e(bytes, 28) + // filenameLength
       uint16e(bytes, 30) + // extraFieldLength

@@ -30,7 +30,6 @@
           const expected = '831739241-296827476-199608789416608489701811849431'
           const blob = new Blob([uint8], { type: 'application/zip' })
           const a = document.createElement('a')
-          const entries = await Reader(blob)
           a.href = URL.createObjectURL(blob)
           a.innerText = a.download = 'Archive.zip'
 
@@ -47,12 +46,14 @@
       pump()
 
       writer.write({
+        comment: 'dog',
         name: '/dog.txt',
         lastModified: new Date(0),
         stream: () => new Response('woff').body
       })
 
       writer.write({
+        comment: 'cat',
         name: '/cat.txt',
         lastModified: new Date(0),
         stream: () => new Response('mjau').body
