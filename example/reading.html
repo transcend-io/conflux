@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+  </head>
+  <body>
+    <!-- for the new blob reading methods -->
+    <script src="https://cdn.jsdelivr.net/gh/eligrey/Blob.js/Blob.js"></script>
+    <script type="module">
+      import reader from '../read.js';
+
+      const jszip = 'https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/';
+      const urls = [
+        jszip + 'all-stream.zip', // problem reading
+        jszip + 'all.7zip.zip', // problem reading
+        jszip + 'all.windows.zip', // problem reading a compressed image
+        jszip + 'all.zip', // problem reading
+        jszip + 'all_appended_bytes.zip', // problem reading
+        jszip + 'all_missing_bytes.zip', // fail as it should
+        jszip + 'all_prepended_bytes.zip', // problem reading
+        jszip + 'archive_comment.zip', // Ok
+        jszip + 'backslash.zip', // ok
+        jszip + 'data_descriptor.zip', // problem reading
+        jszip + 'deflate-stream.zip',
+        jszip + 'deflate.zip',
+        jszip + 'empty.zip',  // ok
+        jszip + 'encrypted.zip',
+        jszip + 'extra_attributes.zip', // ???
+        jszip + 'folder.zip', // ok
+        jszip + 'image.zip', // ok
+        jszip + 'local_encoding_in_name.zip', // unsolvable?
+        jszip + 'nested.zip', // ok
+        jszip + 'nested_data_descriptor.zip',
+        jszip + 'nested_zip64.zip',
+        jszip + 'pile_of_poo.zip',
+        jszip + 'slashes_and_izarc.zip',
+        jszip + 'store-stream.zip',
+        jszip + 'store.zip',
+        jszip + 'subfolder.zip',
+        jszip + 'text.zip',
+        jszip + 'utf8.zip',
+        jszip + 'utf8_in_name.zip',
+        jszip + 'winrar_utf8_in_name.zip',
+        jszip + 'zip64.zip',
+        jszip + 'zip64_appended_bytes.zip',
+        jszip + 'zip64_missing_bytes.zip'
+      ];
+
+      let url = urls[28];
+      console.log(url);
+      fetch(url).then(async res => {
+        const zip = await res.blob();
+        const entries = [];
+
+        // console.log(urls[4])
+        for await (const entry of reader(zip)) {
+          const {
+            comment,
+            name,
+            directory,
+            compressionMethod,
+            size,
+            compressedSize
+          } = entry;
+
+          entries.push({
+            comment,
+            name,
+            directory,
+            compressionMethod,
+            size,
+            compressedSize,
+            ab: await entry.arrayBuffer(),
+            body: await entry.text(),
+            url: URL.createObjectURL(new Blob([await entry.arrayBuffer()], {type: 'd/d'}))
+          });
+        }
+
+        console.table(entries);
+      });
+    </script>
+  </body>
+</html>
