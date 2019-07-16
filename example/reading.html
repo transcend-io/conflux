@@ -12,16 +12,16 @@
 
       const jszip = 'https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/';
       const urls = [
-        jszip + 'all-stream.zip', // problem reading
-        jszip + 'all.7zip.zip', // problem reading
+        jszip + 'all-stream.zip', // ok
+        jszip + 'all.7zip.zip', // ok
         jszip + 'all.windows.zip', // problem reading a compressed image
-        jszip + 'all.zip', // problem reading
-        jszip + 'all_appended_bytes.zip', // problem reading
+        jszip + 'all.zip', // ok
+        jszip + 'all_appended_bytes.zip', // ok
         jszip + 'all_missing_bytes.zip', // fail as it should
         jszip + 'all_prepended_bytes.zip', // problem reading
         jszip + 'archive_comment.zip', // Ok
         jszip + 'backslash.zip', // ok
-        jszip + 'data_descriptor.zip', // problem reading
+        jszip + 'data_descriptor.zip', // ok
         jszip + 'deflate-stream.zip',
         jszip + 'deflate.zip',
         jszip + 'empty.zip',  // ok
@@ -47,7 +47,7 @@
         jszip + 'zip64_missing_bytes.zip'
       ];
 
-      let url = urls[28];
+      let url = urls[30];
       console.log(url);
       fetch(url).then(async res => {
         const zip = await res.blob();

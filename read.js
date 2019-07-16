@@ -68,7 +68,11 @@ class Entry {
   }
   get comment() {
     const dv = this.dataView;
-    const uint8 = new Uint8Array(dv.buffer, dv.byteOffset + 46 + this.filenameLength + this.extraFieldLength, this.commentLength);
+    const uint8 = new Uint8Array(
+      dv.buffer,
+      dv.byteOffset + this.filenameLength + this.extraFieldLength + 46,
+      this.commentLength
+    );
     return decoder.decode(uint8);
   }
 
@@ -160,9 +164,9 @@ async function * seekEOCDR(fileLike) {
 
   for (let i = 0, index = 0; i < fileslength; i++) {
     const size =
-      uint16e(bytes, 28) + // filenameLength
-      uint16e(bytes, 30) + // extraFieldLength
-      uint16e(bytes, 32) + // commentLength
+      uint16e(bytes, index + 28) + // filenameLength
+      uint16e(bytes, index + 30) + // extraFieldLength
+      uint16e(bytes, index + 32) + // commentLength
       46;
 
     yield new Entry(
