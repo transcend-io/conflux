@@ -1,3 +1,16 @@
+import 'https://cdn.jsdelivr.net/npm/pako@1.0.10/dist/pako.min.js'
+
+class Inflator {
+  constructor() {
+    this.inflator = new pako.Inflate({ raw: true })
+    this.inflator.onData = chunk => this.ctrl.enqueue(chunk)
+    this.done = new Promise(rs => (this.inflator.onEnd = rs))
+  }
+  start(ctrl) { this.ctrl = ctrl }
+  transform(chunk) { this.inflator.push(chunk) }
+  flush() { return this.done }
+}
+
 // TODO: later
 const ERR_BAD_FORMAT = 'File format is not recognized.';
 const ZIP_COMMENT_MAX = 65536;
@@ -120,12 +133,19 @@ class Entry {
     const start = this.offset + this.filenameLength + 30 + (extra ? extra + 4 : 0);
     const end = start + this.compressedSize;
 
-    return this
+    let stream = this
       ._fileLike
       .slice(start, end)
       .stream();
-      // .pipeThrought(inflate) // TODO: optional inflate
-      // .pipeThrought(crc) // TODO: crc32 validate
+
+    if (this.compressionMethod) {
+      stream = stream.pipeThrough(
+        new TransformStream(new Inflator())
+      )
+    }
+
+    return stream
+      // .pipeThrough(crc) // TODO: crc32 validate
   }
 
   arrayBuffer() {
