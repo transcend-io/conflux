@@ -1,12 +1,12 @@
-import 'https://cdn.jsdelivr.net/npm/pako@1.0.10/dist/pako.min.js'
-
 class Inflator {
-  constructor() {
+  async start(ctrl) {
+    if (!globalThis.pako) {
+      await import('https://cdn.jsdelivr.net/npm/pako@1.0.10/dist/pako.min.js')
+    }
     this.inflator = new pako.Inflate({ raw: true })
-    this.inflator.onData = chunk => this.ctrl.enqueue(chunk)
+    this.inflator.onData = chunk => ctrl.enqueue(chunk)
     this.done = new Promise(rs => (this.inflator.onEnd = rs))
   }
-  start(ctrl) { this.ctrl = ctrl }
   transform(chunk) { this.inflator.push(chunk) }
   flush() { return this.done }
 }
