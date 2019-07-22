@@ -48,6 +48,11 @@
         lastModified: new Date(0),
         stream: () => new Response('mjau').body
       })
+      writer.write({
+        lastModified: new Date(0),
+        name: '/folder/',
+        directory: true
+      })
 
       writer.close()
     </script>
