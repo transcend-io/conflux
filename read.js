@@ -37,7 +37,7 @@ class Entry {
     return this.dataView.getUint16(8, true);
   }
   get encrypted() {
-    return (this.bitFlag & 1) === 1;
+    return !!(this.dataView.getUint8(8) & 1)
   }
   get compressionMethod() {
     return this.dataView.getUint16(10, true);
@@ -70,7 +70,7 @@ class Entry {
     return this.dataView.getUint16(38, true);
   }
   get directory() {
-    return (this.externalFileAttributes & 16) === 16;
+    return this.dataView.getUint8(38) === 16;
   }
   get offset() {
     return this.dataView.getUint16(42, true);
