@@ -16,6 +16,7 @@ const ERR_BAD_FORMAT = 'File format is not recognized.';
 const ZIP_COMMENT_MAX = 65536;
 const EOCDR_MIN = 22;
 const EOCDR_MAX = EOCDR_MIN + ZIP_COMMENT_MAX;
+const MAX_VALUE_32BITS = 0xFFFFFFFF;
 
 const decoder = new TextDecoder();
 
@@ -24,8 +25,19 @@ class Entry {
     if (dataView.getUint32(0) !== 0x504b0102) {
       throw new Error('ERR_BAD_FORMAT');
     }
-    this.dataView = dataView;
+
+    const dv = dataView;
+
+    this.dataView = dv;
     this._fileLike = fileLike;
+    this.extraFields = {};
+
+    for (let i = 46 + this.filenameLength; i < dv.byteLength;) {
+      let id = dv.getUint16(i, true);
+      let len = dv.getUint16(i + 2, true);
+      this.extraFields[id] = new DataView(dv.buffer, dv.byteOffset + i + 4, len);
+      i += len + 4;
+    }
   }
   get versionMadeBy() {
     return this.dataView.getUint16(4, true);
@@ -67,7 +79,7 @@ class Entry {
     return this.dataView.getUint16(36, true);
   }
   get externalFileAttributes() {
-    return this.dataView.getUint16(38, true);
+    return this.dataView.getUint32(38, true);
   }
   get directory() {
     return this.dataView.getUint8(38) === 16;
@@ -107,30 +119,12 @@ class Entry {
   }
 
   get size() {
-    return this.dataView.getUint32(24, true);
+    const size = this.dataView.getUint32(24, true);
+    return size === MAX_VALUE_32BITS ? this.extraFields[1].getUint8(0) : size;
   }
 
   stream() {
-    // TODO: Investigate
-    // From my understanding jszip tells me that extraFieldLength **might**
-    // vary from local and central dir?
-    // - wtf?!
-    // one guess is that if extraFieldLength is defined it will then also
-    // have a 4 byte added signature? reason:
-    //
-    // 4.3.11  Archive extra data record:
-    //
-    //      archive extra data signature    4 bytes  (0x08064b50)
-    //      extra field length              4 bytes
-    //      extra field data                (variable size)
-    //
-    // But i can also be wrong. An example file i tried to read was
-    // https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/extra_attributes.zip
-    // in the central dir the length was 24
-    // in local header it was 28
-    const extra = this.extraFieldLength;
-
-    const start = this.offset + this.filenameLength + 30 + (extra ? extra + 4 : 0);
+    const start = this.offset + this.filenameLength + 30;
     const end = start + this.compressedSize;
 
     let stream = this
@@ -157,30 +151,51 @@ class Entry {
   }
 }
 
-async function * seekEOCDR(fileLike) {
+async function * seekEOCDR(file) {
+  const uint16e = (b, n) => b[n] | (b[n + 1] << 8);
+
   // "End of central directory record" is the last part of a zip archive, and is at least 22 bytes long.
   // Zip file comment is the last part of EOCDR and has max length of 64KB,
   // so we only have to search the last 64K + 22 bytes of a archive for EOCDR signature (0x06054b50).
-  if (fileLike.size < EOCDR_MIN) throw new Error(ERR_BAD_FORMAT);
+  if (file.size < EOCDR_MIN) throw new Error(ERR_BAD_FORMAT);
 
   // In most cases, the EOCDR is EOCDR_MIN bytes long
-  const dv = await doSeek(EOCDR_MIN) ||
-             await doSeek(Math.min(EOCDR_MAX, fileLike.size));
+  let dv = await doSeek(EOCDR_MIN) ||
+             await doSeek(Math.min(EOCDR_MAX, file.size));
 
   if (!dv) throw new Error(ERR_BAD_FORMAT);
 
-  const datalength = dv.getUint32(16, true);
-  const fileslength = dv.getUint16(8, true);
-  const isZip64 = datalength === 0xFFFFFFFF;
+  let fileslength = dv.getUint16(8, true);
+  let centralDirSize = dv.getUint32(12, true);
+  let centralDirOffset = dv.getUint32(16, true);
+  const isZip64 = centralDirOffset === MAX_VALUE_32BITS;
 
-  if (datalength < 0 || (!isZip64 && datalength >= fileLike.size)) {
+  const l = -dv.byteLength - 20
+  dv = new DataView(await file.slice(l, -dv.byteLength).arrayBuffer())
+
+  if (isZip64) {
+    // const signature = dv.getUint32(0, true) // 4 bytes
+    // const diskWithZip64CentralDirStart = dv.getUint32(4, true) // 4 bytes
+    const relativeOffsetEndOfZip64CentralDir = Number(dv.getBigInt64(8, true)) // 8 bytes
+    // const numberOfDisks = dv.getUint32(16, true) // 4 bytes
+
+    const zip64centralBlob = file.slice(relativeOffsetEndOfZip64CentralDir, l)
+    dv = new DataView(await zip64centralBlob.arrayBuffer())
+    // const zip64EndOfCentralSize = dv.getBigInt64(4, true)
+    // const diskNumber = dv.getUint32(16, true)
+    // const diskWithCentralDirStart = dv.getUint32(20, true)
+    // const centralDirRecordsOnThisDisk = dv.getBigInt64(24, true)
+    fileslength = dv.getBigInt64(32, true)
+    centralDirSize = dv.getBigInt64(40, true)
+    centralDirOffset = dv.getBigInt64(48, true)
+  }
+
+  if (centralDirOffset < 0 || (centralDirOffset >= file.size)) {
     throw new Error(ERR_BAD_FORMAT);
   }
 
-  // const bytes = await fileLike.slice(fileLike.size - datalength).arrayBuffer()
-  const bytes = new Uint8Array(await fileLike.slice(datalength).arrayBuffer());
-
-  const uint16e = (b, n) => b[n] | (b[n + 1] << 8);
+  const blob = file.slice(Number(centralDirOffset), Number(centralDirOffset + centralDirSize));
+  const bytes = new Uint8Array(await blob.arrayBuffer());
 
   for (let i = 0, index = 0; i < fileslength; i++) {
     const size =
@@ -191,7 +206,7 @@ async function * seekEOCDR(fileLike) {
 
     yield new Entry(
       new DataView(bytes.buffer, index, size),
-      fileLike
+      file
     );
 
     index += size;
@@ -199,7 +214,7 @@ async function * seekEOCDR(fileLike) {
 
   // seek last length bytes of file for EOCDR
   async function doSeek(length) {
-    const ab = await fileLike.slice(fileLike.size - length).arrayBuffer();
+    const ab = await file.slice(file.size - length).arrayBuffer();
     const bytes = new Uint8Array(ab);
     for (let i = bytes.length - EOCDR_MIN; i >= 0; i--) {
       if (bytes[i] === 0x50 && bytes[i + 1] === 0x4b && bytes[i + 2] === 0x05 && bytes[i + 3] === 0x06) {
