@@ -2,14 +2,6 @@ import Crc32 from './crc.js';
 
 const encoder = new TextEncoder();
 
-function getDataHelper(byteLength) {
-  const uint8 = new Uint8Array(byteLength);
-  return {
-    array: uint8,
-    view: new DataView(uint8.buffer),
-  };
-}
-
 class ZipTransformer {
   constructor() {
     this.files = Object.create(null);
@@ -41,28 +33,28 @@ class ZipTransformer {
       comment: encoder.encode(entry.comment || ''),
       compressedLength: 0,
       uncompressedLength: 0,
-      header: getDataHelper(26),
+      header: new Uint8Array(26),
     };
 
     const zipObject = this.files[name];
 
     const { header } = zipObject;
-    const data = getDataHelper(30 + nameBuf.length);
+    const hdv = new DataView(header.buffer)
+    const data = new Uint8Array(30 + nameBuf.length);
 
-    header.view.setUint32(0, 0x14000808);
-    header.view.setUint16(6, (((date.getHours() << 6) | date.getMinutes()) << 5) | date.getSeconds() / 2, true);
-    header.view.setUint16(8, ((((date.getFullYear() - 1980) << 4) | (date.getMonth() + 1)) << 5) | date.getDate(), true);
-    header.view.setUint16(22, nameBuf.length, true);
+    hdv.setUint32(0, 0x14000808);
+    hdv.setUint16(6, (((date.getHours() << 6) | date.getMinutes()) << 5) | date.getSeconds() / 2, true);
+    hdv.setUint16(8, ((((date.getFullYear() - 1980) << 4) | (date.getMonth() + 1)) << 5) | date.getDate(), true);
+    hdv.setUint16(22, nameBuf.length, true);
+    data.set([80, 75, 3, 4]);
+    data.set(header, 4);
+    data.set(nameBuf, 30);
 
-    data.view.setUint32(0, 0x504b0304);
-    data.array.set(header.array, 4);
-    data.array.set(nameBuf, 30);
+    this.offset += data.length;
+    ctrl.enqueue(data);
 
-    this.offset += data.array.length;
-    ctrl.enqueue(data.array);
-
-    const footer = getDataHelper(16);
-    footer.view.setUint32(0, 0x504b0708);
+    const footer = new Uint8Array(16);
+    footer.set([80, 75, 7, 8]);
 
     if (entry.stream) {
       zipObject.crc = new Crc32();
@@ -78,17 +70,15 @@ class ZipTransformer {
         ctrl.enqueue(chunk);
       }
 
-      zipObject.header.view.setUint32(10, zipObject.crc.get(), true);
-      zipObject.header.view.setUint32(14, zipObject.compressedLength, true);
-      zipObject.header.view.setUint32(18, zipObject.uncompressedLength, true);
-      footer.view.setUint32(4, zipObject.crc.get(), true);
-      footer.view.setUint32(8, zipObject.compressedLength, true);
-      footer.view.setUint32(12, zipObject.uncompressedLength, true);
+      hdv.setUint32(10, zipObject.crc.get(), true);
+      hdv.setUint32(14, zipObject.compressedLength, true);
+      hdv.setUint32(18, zipObject.uncompressedLength, true);
+      footer.set(header.subarray(10, 22), 4);
     }
 
     this.offset += zipObject.compressedLength + 16;
 
-    ctrl.enqueue(footer.array);
+    ctrl.enqueue(footer);
   }
 
   /**
@@ -104,29 +94,28 @@ class ZipTransformer {
       length += 46 + file.nameBuf.length + file.comment.length;
     });
 
-    const data = getDataHelper(length + 22);
+    const data = new Uint8Array(length + 22);
+    const dv = new DataView(data.buffer);
 
     this.filenames.forEach((fileName) => {
       file = this.files[fileName];
-      data.view.setUint32(index, 0x504b0102);
-      data.view.setUint16(index + 4, 0x1400);
-      data.array.set(file.header.array, index + 6);
-      data.view.setUint16(index + 32, file.comment.length, true);
-      if (file.directory) {
-        data.view.setUint8(index + 38, 0x10);
-      }
-      data.view.setUint32(index + 42, file.offset, true);
-      data.array.set(file.nameBuf, index + 46);
-      data.array.set(file.comment, index + 46 + file.nameBuf.length);
+      dv.setUint32(index, 0x504b0102);
+      dv.setUint16(index + 4, 0x1400);
+      dv.setUint16(index + 32, file.comment.length, true);
+      dv.setUint8(index + 38, file.directory ? 16 : 0);
+      dv.setUint32(index + 42, file.offset, true);
+      data.set(file.header, index + 6);
+      data.set(file.nameBuf, index + 46);
+      data.set(file.comment, index + 46 + file.nameBuf.length);
       index += 46 + file.nameBuf.length + file.comment.length;
     });
 
-    data.view.setUint32(index, 0x504b0506);
-    data.view.setUint16(index + 8, this.filenames.length, true);
-    data.view.setUint16(index + 10, this.filenames.length, true);
-    data.view.setUint32(index + 12, length, true);
-    data.view.setUint32(index + 16, this.offset, true);
-    ctrl.enqueue(data.array);
+    dv.setUint32(index, 0x504b0506);
+    dv.setUint16(index + 8, this.filenames.length, true);
+    dv.setUint16(index + 10, this.filenames.length, true);
+    dv.setUint32(index + 12, length, true);
+    dv.setUint32(index + 16, this.offset, true);
+    ctrl.enqueue(data);
 
     // cleanup
     this.files = Object.create(null);
