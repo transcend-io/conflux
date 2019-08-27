@@ -91,6 +91,7 @@ import reader from '@transcend-io/conflux/read';
 
 fetch("https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/deflate.zip")
   .then(async res => {
+    const zip = await res.blob();
     for await (const entry of reader(zip)) {
       console.log(entry);
     }
