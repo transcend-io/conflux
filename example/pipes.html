@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/polyfill.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/streamsaver@2.0.3/StreamSaver.min.js"></script>
+
+    <script type="module">
+      import Zip from '../write.js'
+      const streamSaver = window.streamSaver;
+
+      const { readable, writable } = new Zip();
+      const writer = writable.getWriter();
+
+      const fileStream = streamSaver.createWriteStream('conflux.zip');
+
+      (async () => {
+        writer.write({
+          name: '/cat.txt',
+          lastModified: new Date(0),
+          stream: () => new Response('mjau').body,
+        });
+
+        const imgStream = await fetch('https://s3-us-west-2.amazonaws.com/bencmbrook/tortoise.jpg')
+          .then(r => r.body);
+
+        writer.write({
+          name: '/tortoise.jpg',
+          lastModified: new Date(0),
+          stream: () => imgStream,
+        });
+
+        readable
+          .pipeTo(fileStream)
+
+        writer.close();
+      })();
+    </script>
+  </body>
+</html>

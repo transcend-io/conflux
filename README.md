@@ -3,8 +3,10 @@
 </p>
 <h1 align="center">Conflux</h1>
 <p align="center">
-  <strong>Build zip files out of whatwg streams in the browser.</strong>
+  <strong>Build and read zip files with whatwg streams in the browser.</strong>
   <br /><br />
+  <p>/ˈkänˌfləks/</p><br />
+  <i>(*noun*)</i><p>a flowing together of two or more streams</p>
   <i>Coming soon. This repo is currently a work in progress.</i>
   <br /><br />
   <a href="https://travis-ci.com/transcend-io/conflux"><img src="https://travis-ci.com/transcend-io/conflux.svg?branch=master" alt="Build Status"></a>
@@ -17,13 +19,44 @@
 </p>
 <br />
 
-/ˈkänˌfləks/
-
-(*noun*) a flowing together of two or more streams
-
 ## Usage
 
-To do!
+### Importing Conflux
+
+```sh
+npm install --save @transcend-io/conflux
+```
+
+```js
+import Zip from '@transcend-io/conflux/write';
+import reader from '@transcend-io/conflux/read';
+
+const { readable, writable } = new Zip();
+```
+
+### Writing a ZIP
+
+```js
+import Zip from '@transcend-io/conflux/write';
+
+// Set up conflux
+const { readable, writable } = new Zip();
+const writer = writable.getWriter();
+
+// Set up streamsaver
+const fileStream = streamSaver.createWriteStream('conflux.zip');
+
+// Add a file
+writer.write({
+  name: '/cat.txt',
+  lastModified: new Date(0),
+  stream: () => new Response('mjau').body
+});
+
+readable.pipeTo(fileStream);
+
+writer.close();
+```
 
 ## Big Thanks
 
