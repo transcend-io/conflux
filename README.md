@@ -5,8 +5,8 @@
 <p align="center">
   <strong>Build and read zip files with whatwg streams in the browser.</strong>
   <br /><br />
-  <p>/ˈkänˌfləks/</p><br />
-  <i>(*noun*)</i><p>a flowing together of two or more streams</p>
+  <span>/ˈkänˌfləks/</span>
+  (<i>noun</i>)<span> a flowing together of two or more streams</span><br /><br />
   <i>Coming soon. This repo is currently a work in progress.</i>
   <br /><br />
   <a href="https://travis-ci.com/transcend-io/conflux"><img src="https://travis-ci.com/transcend-io/conflux.svg?branch=master" alt="Build Status"></a>
