@@ -19,6 +19,10 @@
 </p>
 <br />
 
+## Examples
+
+- [Fetch 8 remote file streams in parallel](https://conflux.netlify.com/example/pipes).
+
 ## Usage
 
 ### Importing Conflux
