@@ -28,7 +28,7 @@ npm install --save @transcend-io/conflux
 ```
 
 ```js
-import Zip from '@transcend-io/conflux';
+import Zip from '@transcend-io/conflux/write';
 
 const { readable, writable } = new Zip();
 ```
@@ -82,6 +82,19 @@ writer.close();
 
   writer.close();
 })();
+```
+
+### Reading ZIP files
+
+```js
+import reader from '@transcend-io/conflux/read';
+
+fetch("https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/deflate.zip")
+  .then(async res => {
+    for await (const entry of reader(zip)) {
+      console.log(entry);
+    }
+  });
 ```
 
 ## Big Thanks
