@@ -77,8 +77,7 @@ writer.close();
     stream: () => imgStream,
   });
 
-  readable
-    .pipeTo(fileStream)
+  readable.pipeTo(fileStream)
 
   writer.close();
 })();
