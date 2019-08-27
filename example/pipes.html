@@ -24,11 +24,11 @@
           stream: () => new Response('mjau').body,
         });
 
-        const imgStream = await fetch('https://s3-us-west-2.amazonaws.com/bencmbrook/tortoise.jpg')
+        const imgStream = await fetch('https://s3-us-west-2.amazonaws.com/bencmbrook/Earth.jpg')
           .then(r => r.body);
 
         writer.write({
-          name: '/tortoise.jpg',
+          name: '/Earth.jpg',
           lastModified: new Date(0),
           stream: () => imgStream,
         });

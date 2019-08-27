@@ -28,8 +28,7 @@ npm install --save @transcend-io/conflux
 ```
 
 ```js
-import Zip from '@transcend-io/conflux/write';
-import reader from '@transcend-io/conflux/read';
+import Zip from '@transcend-io/conflux';
 
 const { readable, writable } = new Zip();
 ```
@@ -38,6 +37,7 @@ const { readable, writable } = new Zip();
 
 ```js
 import Zip from '@transcend-io/conflux/write';
+import streamSaver from 'streamsaver'
 
 // Set up conflux
 const { readable, writable } = new Zip();
@@ -56,6 +56,32 @@ writer.write({
 readable.pipeTo(fileStream);
 
 writer.close();
+```
+
+### Incorporating other streams
+
+```js
+(async () => {
+  writer.write({
+    name: '/cat.txt',
+    lastModified: new Date(0),
+    stream: () => new Response('mjau').body,
+  });
+
+  const imgStream = await fetch('https://s3-us-west-2.amazonaws.com/bencmbrook/Earth.jpg')
+    .then(r => r.body);
+
+  writer.write({
+    name: '/Earth.jpg',
+    lastModified: new Date(0),
+    stream: () => imgStream,
+  });
+
+  readable
+    .pipeTo(fileStream)
+
+  writer.close();
+})();
 ```
 
 ## Big Thanks
