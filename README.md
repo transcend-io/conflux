@@ -7,7 +7,6 @@
   <br /><br />
   <span>/ˈkänˌfləks/</span>
   (<i>noun</i>)<span> a flowing together of two or more streams</span><br /><br />
-  <i>Coming soon. This repo is currently a work in progress.</i>
   <br /><br />
   <a href="https://travis-ci.com/transcend-io/conflux"><img src="https://travis-ci.com/transcend-io/conflux.svg?branch=master" alt="Build Status"></a>
   <a href="https://snyk.io//test/github/transcend-io/conflux?targetFile=package.json"><img src="https://snyk.io//test/github/transcend-io/conflux/badge.svg?targetFile=package.json" alt="Known Vulnerabilities"></a>
@@ -18,6 +17,10 @@
   <a href="https://saucelabs.com/u/bencmbrook"><img src="https://saucelabs.com/browser-matrix/bencmbrook.svg?auth=c2b96594999df3d684c9af8d63a0c61e" alt="Sauce Test Status"></a>
 </p>
 <br />
+
+## Examples
+
+- [Fetch 8 remote file streams in parallel](https://conflux.netlify.com/example/pipes).
 
 ## Usage
 
@@ -77,8 +80,7 @@ writer.close();
     stream: () => imgStream,
   });
 
-  readable
-    .pipeTo(fileStream)
+  readable.pipeTo(fileStream)
 
   writer.close();
 })();
