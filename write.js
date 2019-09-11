@@ -45,6 +45,7 @@ class ZipTransformer {
     hdv.setUint32(0, 0x14000808);
     hdv.setUint16(6, (((date.getHours() << 6) | date.getMinutes()) << 5) | date.getSeconds() / 2, true);
     hdv.setUint16(8, ((((date.getFullYear() - 1980) << 4) | (date.getMonth() + 1)) << 5) | date.getDate(), true);
+    hdv.setUint16(22, nameBuf.length, true);
     data.set([80, 75, 3, 4]);
     data.set(header, 4);
     data.set(nameBuf, 30);

@@ -20,7 +20,7 @@
     "readable",
     "files"
   ],
-  "contributers": [
+  "contributors": [
     {
       "name": "Jimmy Wärting",
       "email": "jimmy@warting.se",
@@ -51,5 +51,6 @@
     "istanbul": "^0.4.5",
     "nyc": "^14.1.1",
     "tape": "^4.11.0"
-  }
+  },
+  "dependencies": {}
 }
