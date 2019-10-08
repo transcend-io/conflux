@@ -12,8 +12,8 @@ class Crc32 {
     this.crc = crc;
   }
 
-  get() {
-    return ~this.crc;
+  get () {
+    return (this.crc ^ (-1)) >>> 0
   }
 }
 
