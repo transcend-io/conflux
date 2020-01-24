@@ -1,25 +1,25 @@
 language: node_js
 node_js:
-- lts/*
+  - lts/*
 
 branches:
   only:
     - master
 
 install:
-- npm ci
-- npm install -g codecov
+  - yarn install --frozen-lockfile
+  - yarn global add codecov
 
 cache:
   directories:
-  - "$HOME/.npm"
+    - "$HOME/.npm"
 
 script:
-- npm run browser-test
+  - yarn browser-test
 
 after_success:
-- npm run coverage
-- codecov
+  - yarn coverage
+  - codecov
 
 addons:
   sauce_connect: true
