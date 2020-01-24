@@ -28,11 +28,11 @@
 ### Importing Conflux
 
 ```sh
-npm install --save @transcend-io/conflux
+yarn add @transcend-io/conflux
 ```
 
 ```js
-import Zip from '@transcend-io/conflux/write';
+import Zip from "@transcend-io/conflux/write";
 
 const { readable, writable } = new Zip();
 ```
@@ -40,21 +40,21 @@ const { readable, writable } = new Zip();
 ### Writing a ZIP
 
 ```js
-import Zip from '@transcend-io/conflux/write';
-import streamSaver from 'streamsaver'
+import Zip from "@transcend-io/conflux/write";
+import streamSaver from "streamsaver";
 
 // Set up conflux
 const { readable, writable } = new Zip();
 const writer = writable.getWriter();
 
 // Set up streamsaver
-const fileStream = streamSaver.createWriteStream('conflux.zip');
+const fileStream = streamSaver.createWriteStream("conflux.zip");
 
 // Add a file
 writer.write({
-  name: '/cat.txt',
+  name: "/cat.txt",
   lastModified: new Date(0),
-  stream: () => new Response('mjau').body
+  stream: () => new Response("mjau").body
 });
 
 readable.pipeTo(fileStream);
@@ -67,21 +67,22 @@ writer.close();
 ```js
 (async () => {
   writer.write({
-    name: '/cat.txt',
+    name: "/cat.txt",
     lastModified: new Date(0),
-    stream: () => new Response('mjau').body,
+    stream: () => new Response("mjau").body
   });
 
-  const imgStream = await fetch('https://s3-us-west-2.amazonaws.com/bencmbrook/Earth.jpg')
-    .then(r => r.body);
+  const imgStream = await fetch(
+    "https://s3-us-west-2.amazonaws.com/bencmbrook/Earth.jpg"
+  ).then(r => r.body);
 
   writer.write({
-    name: '/Earth.jpg',
+    name: "/Earth.jpg",
     lastModified: new Date(0),
-    stream: () => imgStream,
+    stream: () => imgStream
   });
 
-  readable.pipeTo(fileStream)
+  readable.pipeTo(fileStream);
 
   writer.close();
 })();
@@ -90,15 +91,16 @@ writer.close();
 ### Reading ZIP files
 
 ```js
-import reader from '@transcend-io/conflux/read';
+import reader from "@transcend-io/conflux/read";
 
-fetch("https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/deflate.zip")
-  .then(async res => {
+fetch("https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/deflate.zip").then(
+  async res => {
     const zip = await res.blob();
     for await (const entry of reader(zip)) {
       console.log(entry);
     }
-  });
+  }
+);
 ```
 
 ## Big Thanks
@@ -107,6 +109,6 @@ Cross-browser Testing Platform and Open Source <3 Provided by [Sauce Labs][homep
 
 [homepage]: https://saucelabs.com
 
-
 ## License
+
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Ftranscend-io%2Fconflux.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Ftranscend-io%2Fconflux?ref=badge_large)
