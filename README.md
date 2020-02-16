@@ -21,7 +21,9 @@
 
 ## Examples
 
-- [Fetch 8 remote file streams in parallel](https://conflux.netlify.com/example/pipes).
+- [Zip 8 remote file streams in parallel](https://conflux.netlify.com/example/pipes).
+- [Zip a very large remote file and stream to disk](https://conflux.netlify.com/example/pipes2).
+- [Read the files inside ZIP files](https://conflux.netlify.com/example/reading) - Note empty ZIPs expectedly throw errors. Zip64 support is a work in progress.
 
 ## Usage
 

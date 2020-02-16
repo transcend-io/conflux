@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8">
     <title></title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
   </head>
   <body>
     <!-- for the new blob reading methods -->
@@ -47,13 +48,12 @@
         /* 32 */ jszip + 'zip64_missing_bytes.zip' // fail
       ];
 
-      let url = urls[11];
-      console.log(url);
-      fetch(url).then(async res => {
+      async function getTableEntries(url) {
+        console.log(`Reading ${url} ...`);
+        const res = await fetch(url);
         const zip = await res.blob();
         const entries = [];
 
-        // console.log(urls[4])
         for await (const entry of reader(zip)) {
           const {
             comment,
@@ -77,8 +77,81 @@
           });
         }
 
-        console.table(entries);
+        return entries;
+      }
+
+      urls.forEach(async (url) => {
+        let entries, error;
+        try {
+          entries = await getTableEntries(url);
+        } catch (err) {
+          console.error(err);
+          error = err;
+        }
+
+        /**
+         * Everything below here is just making HTML tables
+         */
+
+        // Append to table
+        const div = document.getElementById('tables');
+
+        const header = document.createElement('h5');
+        header.className = 'h5 mt-5';
+        const a = document.createElement('a');
+        const aText = document.createTextNode(url);
+        a.href = url;
+        a.appendChild(aText);
+        header.appendChild(a);
+        div.appendChild(header);
+
+        const feedbackMessage = document.createElement('pre');
+        let feedbackText;
+        if (error) {
+          feedbackText = document.createTextNode(error.stack);
+        } else {
+          feedbackText = document.createTextNode('Success');
+        }
+        feedbackMessage.appendChild(feedbackText);
+        div.appendChild(feedbackMessage);
+
+        const table = document.createElement('table');
+
+        // Generate header row
+        const headerRow = document.createElement('tr');
+        Object.keys(entries[0]).forEach(name => {
+          const th = document.createElement('th');
+          const text = document.createTextNode(name);
+          th.appendChild(text);
+          headerRow.appendChild(th);
+        });
+        table.appendChild(headerRow);
+
+        // Generate content rows
+        entries.forEach(row => {
+          const tr = document.createElement('tr');
+          Object.values(row).forEach(cellText => {
+            const td = document.createElement('td');
+
+            let parsedText;
+            try {
+              parsedText = JSON.stringify(cellText, null, 2);
+            } catch (err) {
+              parsedText = cellText;
+            }
+
+            const text = document.createTextNode(parsedText);
+            td.appendChild(text);
+            tr.appendChild(td);
+          });
+          table.appendChild(tr);
+        })
+        div.appendChild(table);
       });
-    </script>
+
+      </script>
+      <div id="tables" class="container table">
+        <h1 class="h1 my-5">Reading ZIP files</h1>
+      </div>
   </body>
 </html>
