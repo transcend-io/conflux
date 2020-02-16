@@ -21,7 +21,7 @@
 
 ## Blazing Fast
 
-- 6.7 kB import with zero dependencies
+- 19.4 kB import with zero dependencies
 - Uses streams, minimizing memory overhead
 
 ## Examples
