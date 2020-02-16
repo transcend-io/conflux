@@ -30,7 +30,11 @@
 ### Importing Conflux
 
 ```sh
+# With Yarn
 yarn add @transcend-io/conflux
+
+# With NPM
+npm install --save @transcend-io/conflux
 ```
 
 ```js
