@@ -38,7 +38,7 @@ class Entry {
       let id = dv.getUint16(i, true);
       let len = dv.getUint16(i + 2, true);
       let start = dv.byteOffset + i + 4;
-      this.extraFields[id] = new DataView(dv.buffer.slice(start, start + len));
+      this._extraFields[id] = new DataView(dv.buffer.slice(start, start + len));
       i += len + 4;
     }
   }
@@ -118,7 +118,7 @@ class Entry {
   }
 
   get name() {
-    if (!this.bitFlag && this.extraFields[0x7075]) {
+    if (!this.bitFlag && this.extraFields && this.extraFields[0x7075]) {
       return decoder.decode(this.extraFields[0x7075].buffer.slice(5));
     }
 
@@ -244,6 +244,10 @@ async function * seekEOCDR(file) {
       uint16e(bytes, index + 30) + // extraFieldLength
       uint16e(bytes, index + 32) + // commentLength
       46;
+
+    if (index + size > bytes.length) {
+      throw new Error('Invalid ZIP file.');
+    }
 
     yield new Entry(
       new DataView(bytes.buffer, index, size),

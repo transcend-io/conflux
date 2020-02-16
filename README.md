@@ -19,16 +19,27 @@
 </p>
 <br />
 
+## Blazing Fast
+
+- 19.4 kB import with zero dependencies
+- Uses streams, minimizing memory overhead
+
 ## Examples
 
-- [Fetch 8 remote file streams in parallel](https://conflux.netlify.com/example/pipes).
+- [Zip 8 remote file streams in parallel](https://conflux.netlify.com/example/pipes).
+- [Zip a very large remote file and stream to disk](https://conflux.netlify.com/example/pipes2).
+- [Read the files inside ZIP files](https://conflux.netlify.com/example/reading)
 
 ## Usage
 
 ### Importing Conflux
 
 ```sh
+# With Yarn
 yarn add @transcend-io/conflux
+
+# With NPM
+npm install --save @transcend-io/conflux
 ```
 
 ```js
