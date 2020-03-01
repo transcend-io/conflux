@@ -2513,6 +2513,11 @@ core-js-compat@^3.6.2:
     browserslist "^4.8.3"
     semver "7.0.0"
 
+core-js@3.6.4:
+  version "3.6.4"
+  resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.6.4.tgz#440a83536b458114b9cb2ac1580ba377dc470647"
+  integrity sha512-4paDGScNgZP2IXXilaffL9X7968RuvwlkK3xWtZRVqgd8SYNiVKRJvkFd1aqqEuPfN7E68ZHEp9hDj6lHj4Hyw==
+
 core-js@^2.4.0, core-js@^2.5.0:
   version "2.6.11"
   resolved "https://registry.yarnpkg.com/core-js/-/core-js-2.6.11.tgz#38831469f9922bded8ee21c9dc46985e0399308c"
@@ -8450,6 +8455,11 @@ wd@~1.12.0:
     q "^1.5.1"
     request "2.88.0"
     vargs "^0.1.0"
+
+web-streams-polyfill@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/web-streams-polyfill/-/web-streams-polyfill-2.1.0.tgz#a4673244f92338e714bad632d2e0ef0004098271"
+  integrity sha512-ZgJ7lsxTM0GR77Nwzt950NHd/CjWzVEct2DH48Dy8/u+3r4TD9o8Bo1VNFK04QajgcEjr0CZPlRhau8LtR3YHQ==
 
 webpack-cli@^3.3.11:
   version "3.3.11"

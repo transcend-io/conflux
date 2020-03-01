@@ -5,10 +5,6 @@
   "main": "index.js",
   "scripts": {
     "####### Test #######": "",
-    "test": "node test.js",
-    "browser-test-2": "airtap test.js",
-    "browser-test": "airtap --loopback airtap.local --coverage test.js",
-    "coverage": "nyc report --reporter=text-lcov > coverage.lcov",
     "test:local": "karma start karma.local.js",
     "test:local:rebuild": "yarn && karma start karma.local.js",
     "test:browserstack": "karma start karma.browserstack.js",
@@ -58,34 +54,36 @@
   },
   "homepage": "https://github.com/transcend-io/conflux#readme",
   "devDependencies": {
+    "@babel/core": "^7.8.6",
+    "@babel/preset-env": "^7.8.6",
     "airtap": "^3.0.0",
     "babel-loader": "^8.0.6",
     "codecov": "^3.6.5",
     "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-config-prettier": "^6.10.0",
     "eslint-plugin-import": "^2.18.0",
+    "eslint-plugin-prettier": "^3.1.2",
     "istanbul": "^0.4.5",
     "istanbul-instrumenter-loader": "^3.0.1",
     "karma": "^4.4.1",
     "karma-browserstack-launcher": "^1.5.1",
     "karma-chrome-launcher": "^3.1.0",
     "karma-coverage": "^2.0.1",
+    "karma-sourcemap-loader": "^0.3.7",
     "karma-tap": "^4.2.0",
     "karma-webpack": "^4.0.2",
     "markdown-toc": "^1.2.0",
     "nyc": "^15.0.0",
+    "prettier": "^1.19.1",
     "tape": "^4.11.0",
     "terser-webpack-plugin": "^2.3.5",
     "webpack": "^4.41.6",
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
-    "@babel/core": "^7.8.6",
-    "@babel/preset-env": "^7.8.6",
-    "eslint-config-prettier": "^6.10.0",
-    "eslint-plugin-prettier": "^3.1.2",
-    "karma-sourcemap-loader": "^0.3.7",
+    "core-js": "3.6.4",
     "pako": "^1.0.11",
-    "prettier": "^1.19.1"
+    "web-streams-polyfill": "^2.1.0"
   }
 }

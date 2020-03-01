@@ -6,6 +6,8 @@
  * @license MIT
  */
 
+import 'core-js/stable';
+import { TransformStream } from 'web-streams-polyfill/ponyfill';
 import Inflate from 'pako';
 import Crc32 from './crc.js';
 
