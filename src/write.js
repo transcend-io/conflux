@@ -1,4 +1,12 @@
-import Crc32 from './crc.js';
+/**
+ * Conflux
+ * Build (and read) zip files with whatwg streams in the browser.
+ *
+ * @author Transcend Inc. <https://transcend.io>
+ * @license MIT
+ */
+
+import Crc32 from "./crc.js";
 
 const encoder = new TextEncoder();
 
@@ -6,7 +14,7 @@ class ZipTransformer {
   constructor() {
     this.files = Object.create(null);
     this.filenames = [];
-    this.offset = 0n;
+    this.offset = BigInt(0);
   }
 
   /**
@@ -18,10 +26,14 @@ class ZipTransformer {
    */
   async transform(entry, ctrl) {
     let name = entry.name.trim();
-    const date = new Date(typeof entry.lastModified === 'undefined' ? Date.now() : entry.lastModified);
+    const date = new Date(
+      typeof entry.lastModified === "undefined"
+        ? Date.now()
+        : entry.lastModified
+    );
 
-    if (entry.directory && !name.endsWith('/')) name += '/';
-    if (this.files[name]) ctrl.abort(new Error('File already exists.'));
+    if (entry.directory && !name.endsWith("/")) name += "/";
+    if (this.files[name]) ctrl.abort(new Error("File already exists."));
 
     const nameBuf = encoder.encode(name);
     this.filenames.push(name);
@@ -30,21 +42,31 @@ class ZipTransformer {
       directory: !!entry.directory,
       nameBuf,
       offset: this.offset,
-      comment: encoder.encode(entry.comment || ''),
-      compressedLength: 0n,
-      uncompressedLength: 0n,
-      header: new Uint8Array(26),
+      comment: encoder.encode(entry.comment || ""),
+      compressedLength: BigInt(0),
+      uncompressedLength: BigInt(0),
+      header: new Uint8Array(26)
     };
 
     const zipObject = this.files[name];
 
     const { header } = zipObject;
-    const hdv = new DataView(header.buffer)
+    const hdv = new DataView(header.buffer);
     const data = new Uint8Array(30 + nameBuf.length);
 
     hdv.setUint32(0, 0x14000808);
-    hdv.setUint16(6, (((date.getHours() << 6) | date.getMinutes()) << 5) | date.getSeconds() / 2, true);
-    hdv.setUint16(8, ((((date.getFullYear() - 1980) << 4) | (date.getMonth() + 1)) << 5) | date.getDate(), true);
+    hdv.setUint16(
+      6,
+      (((date.getHours() << 6) | date.getMinutes()) << 5) |
+        (date.getSeconds() / 2),
+      true
+    );
+    hdv.setUint16(
+      8,
+      ((((date.getFullYear() - 1980) << 4) | (date.getMonth() + 1)) << 5) |
+        date.getDate(),
+      true
+    );
     hdv.setUint16(22, nameBuf.length, true);
     data.set([80, 75, 3, 4]);
     data.set(header, 4);
@@ -78,7 +100,7 @@ class ZipTransformer {
 
     hdv.setUint16(22, nameBuf.length, true);
 
-    this.offset += zipObject.compressedLength + 16n;
+    this.offset += zipObject.compressedLength + BigInt(16);
 
     ctrl.enqueue(footer);
   }
@@ -91,7 +113,7 @@ class ZipTransformer {
     let index = 0;
     let file;
 
-    this.filenames.forEach((fileName) => {
+    this.filenames.forEach(fileName => {
       file = this.files[fileName];
       length += 46 + file.nameBuf.length + file.comment.length;
     });
@@ -99,7 +121,7 @@ class ZipTransformer {
     const data = new Uint8Array(length + 22);
     const dv = new DataView(data.buffer);
 
-    this.filenames.forEach((fileName) => {
+    this.filenames.forEach(fileName => {
       file = this.files[fileName];
       dv.setUint32(index, 0x504b0102);
       dv.setUint16(index + 4, 0x1400);

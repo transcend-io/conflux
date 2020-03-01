@@ -1,4 +1,4 @@
-import Conflux from '../write.js';
+import Conflux from '../build/write.js';
 
 const {
   WritableStream,

@@ -1,0 +1,49 @@
+/**
+ * All test logic lives in the Karma files - (any difference in test bundles happens there)
+ * The only env differences is prod vs dev - the tests work in both environments.
+ */
+const { join } = require('path');
+const TerserPlugin = require('terser-webpack-plugin');
+
+const src = join(__dirname, 'src');
+
+const shouldMinify = ['staging', 'production'].includes(process.env.DEPLOY_ENV);
+
+const config = {
+  node: {
+    fs: 'empty',
+  },
+  mode: shouldMinify ? 'production' : 'development',
+  entry: {
+    read: `${src}/read.js`,
+    write: `${src}/write.js`,
+    tests: join(__dirname, 'test.js'),
+  },
+  output: {
+    path: join(__dirname, 'build'),
+    filename: '[name].js',
+  },
+  resolve: {
+    extensions: ['.ts', '.js'],
+  },
+  watch: false,
+  module: {
+    rules: [
+      {
+        test: /\.(js|jsx)?$/, // Transform all .js/.jsx files required somewhere with Babel
+        include: [src],
+        use: {
+          loader: 'babel-loader',
+        },
+      },
+    ],
+  },
+  target: 'web', // Make web variables accessible to webpack, e.g. window
+  devtool: shouldMinify ? false : 'eval-source-map',
+  optimization: {
+    minimize: shouldMinify,
+    minimizer: shouldMinify ? [new TerserPlugin()] : [],
+  },
+};
+
+module.exports = config;
