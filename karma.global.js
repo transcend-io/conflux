@@ -1,37 +1,42 @@
-module.exports = config => ({
+const { join } = require('path');
+const webpackConfig = require('./webpack.config.js');
+
+const src = join(__dirname, 'src');
+
+module.exports = (config) => ({
   // base path that will be used to resolve all patterns (eg. files, exclude)
-  basePath: "",
+  basePath: '',
 
   // frameworks to use
   // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-  frameworks: ["tap"],
+  frameworks: ['tap'],
 
   // list of files / patterns to load in the browser
   files: [
     {
-      pattern: "src/read.js",
+      pattern: 'src/read.js',
       included: true,
       served: true,
-      nocache: false
+      nocache: false,
     },
     {
-      pattern: "src/write.js",
+      pattern: 'src/write.js',
       included: true,
       served: true,
-      nocache: false
+      nocache: false,
     },
     {
-      pattern: "src/crc.js",
+      pattern: 'src/crc.js',
       included: false,
       served: true,
-      nocache: false
+      nocache: false,
     },
     {
-      pattern: "test.js",
+      pattern: 'src/index.test.js',
       included: true,
       served: true,
-      nocache: false
-    }
+      nocache: false,
+    },
   ],
 
   // list of files / patterns to exclude
@@ -40,15 +45,42 @@ module.exports = config => ({
   // preprocess matching files before serving them to the browser
   // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
   preprocessors: {
-    "src/**": ["coverage"]
+    'src/**': ['webpack', 'sourcemap'],
   },
 
-  plugins: ["karma-tap", "karma-coverage"],
+  // webpack configuration
+  webpack: {
+    // eslint-disable-next-line global-require
+    ...webpackConfig,
+    module: {
+      ...webpackConfig.module,
+      rules: [
+        ...webpackConfig.module.rules,
+        {
+          // Instrument sourcemaps for code coverage
+          test: /\.(js)?$/,
+          include: [src],
+          use: {
+            loader: 'istanbul-instrumenter-loader',
+            options: { esModules: true },
+          },
+          enforce: 'post',
+        },
+      ],
+    },
+  },
 
-  reporters: ["progress", "coverage"],
+  plugins: [
+    'karma-tap',
+    'karma-coverage',
+    'karma-webpack',
+    'karma-sourcemap-loader',
+  ],
+
+  reporters: ['progress', 'coverage'],
 
   coverageReporter: {
-    reporters: [{ type: "lcov" }]
+    reporters: [{ type: 'lcov' }],
   },
 
   // web server port
@@ -70,5 +102,5 @@ module.exports = config => ({
 
   // Concurrency level
   // how many browser should be started simultaneous
-  concurrency: Infinity
+  concurrency: Infinity,
 });

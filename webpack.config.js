@@ -17,7 +17,7 @@ const config = {
   entry: {
     read: `${src}/read.js`,
     write: `${src}/write.js`,
-    tests: join(__dirname, 'test.js'),
+    tests: `${src}/index.test.js`,
   },
   output: {
     path: join(__dirname, 'build'),

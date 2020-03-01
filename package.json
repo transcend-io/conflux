@@ -71,6 +71,7 @@
     "karma-chrome-launcher": "^3.1.0",
     "karma-coverage": "^2.0.1",
     "karma-tap": "^4.2.0",
+    "karma-webpack": "^4.0.2",
     "markdown-toc": "^1.2.0",
     "nyc": "^15.0.0",
     "tape": "^4.11.0",

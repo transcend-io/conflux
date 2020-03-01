@@ -6,14 +6,14 @@
  * @license MIT
  */
 
-import Inflate from "pako";
-import Crc32 from "./crc.js";
+import Inflate from 'pako';
+import Crc32 from './crc.js';
 
 class Inflator {
   async start(ctrl) {
     this.inflator = new Inflate({ raw: true });
-    this.inflator.onData = chunk => ctrl.enqueue(chunk);
-    this.done = new Promise(rs => (this.inflator.onEnd = rs));
+    this.inflator.onData = (chunk) => ctrl.enqueue(chunk);
+    this.done = new Promise((rs) => (this.inflator.onEnd = rs));
   }
 
   transform(chunk) {
@@ -25,7 +25,7 @@ class Inflator {
   }
 }
 
-const ERR_BAD_FORMAT = "File format is not recognized.";
+const ERR_BAD_FORMAT = 'File format is not recognized.';
 const ZIP_COMMENT_MAX = 65536;
 const EOCDR_MIN = 22;
 const EOCDR_MAX = EOCDR_MIN + ZIP_COMMENT_MAX;
@@ -37,7 +37,7 @@ const uint16e = (b, n) => b[n] | (b[n + 1] << 8);
 class Entry {
   constructor(dataView, fileLike) {
     if (dataView.getUint32(0) !== 0x504b0102) {
-      throw new Error("ERR_BAD_FORMAT");
+      throw new Error('ERR_BAD_FORMAT');
     }
 
     const dv = dataView;
@@ -124,7 +124,7 @@ class Entry {
     const uint8 = new Uint8Array(
       dv.buffer,
       dv.byteOffset + this.filenameLength + this.extraFieldLength + 46,
-      this.commentLength
+      this.commentLength,
     );
     return decoder.decode(uint8);
   }
@@ -140,8 +140,8 @@ class Entry {
         (t >> 16) & 0x1f, // day
         (t >> 11) & 0x1f, // hour
         (t >> 5) & 0x3f, // minute
-        (t & 0x1f) << 1
-      )
+        (t & 0x1f) << 1,
+      ),
     ); // second
   }
 
@@ -158,7 +158,7 @@ class Entry {
     const uint8 = new Uint8Array(
       dv.buffer,
       dv.byteOffset + 46,
-      this.filenameLength
+      this.filenameLength,
     );
     return decoder.decode(uint8);
   }
@@ -175,7 +175,7 @@ class Entry {
     this._fileLike
       .slice(this.offset + 26, this.offset + 30)
       .arrayBuffer()
-      .then(ab => {
+      .then((ab) => {
         const crc = new Crc32();
         const bytes = new Uint8Array(ab);
         const localFileOffset = uint16e(bytes, 0) + uint16e(bytes, 2) + 30;
@@ -193,12 +193,12 @@ class Entry {
               crc.append(chunk);
               ctrl.enqueue(chunk);
             },
-            flush: ctrl => {
+            flush: (ctrl) => {
               if (crc.get() !== this.crc32) {
                 ctrl.error(new Error("The crc32 checksum don't match"));
               }
-            }
-          })
+            },
+          }),
         );
 
         stream.pipeTo(writable);
@@ -208,14 +208,14 @@ class Entry {
   }
 
   arrayBuffer() {
-    return new Response(this.stream()).arrayBuffer().catch(e => {
-      throw new Error("Failed to read Entry");
+    return new Response(this.stream()).arrayBuffer().catch((e) => {
+      throw new Error('Failed to read Entry');
     });
   }
 
   text() {
-    return new Response(this.stream()).text().catch(e => {
-      throw new Error("Failed to read Entry");
+    return new Response(this.stream()).text().catch((e) => {
+      throw new Error('Failed to read Entry');
     });
   }
 
@@ -223,10 +223,11 @@ class Entry {
     return new Response(this.stream())
       .blob()
       .then(
-        blob => new File([blob], this.name, { lastModified: this.lastModified })
+        (blob) =>
+          new File([blob], this.name, { lastModified: this.lastModified }),
       )
-      .catch(e => {
-        throw new Error("Failed to read Entry");
+      .catch((e) => {
+        throw new Error('Failed to read Entry');
       });
   }
 }
@@ -286,7 +287,7 @@ async function* seekEOCDR(file) {
       46;
 
     if (index + size > bytes.length) {
-      throw new Error("Invalid ZIP file.");
+      throw new Error('Invalid ZIP file.');
     }
 
     yield new Entry(new DataView(bytes.buffer, index, size), file);

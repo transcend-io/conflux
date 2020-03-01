@@ -1,7 +1,7 @@
 // Karma configuration
-const getGlobalConfig = require("./karma.global");
+const getGlobalConfig = require('./karma.global');
 
-module.exports = config => {
+module.exports = (config) => {
   const globalConfig = getGlobalConfig(config);
 
   config.set({
@@ -12,12 +12,12 @@ module.exports = config => {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ["Chrome"],
+    browsers: ['Chrome'],
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: true,
 
-    plugins: [...globalConfig.plugins, "karma-chrome-launcher"]
+    plugins: [...globalConfig.plugins, 'karma-chrome-launcher'],
   });
 };

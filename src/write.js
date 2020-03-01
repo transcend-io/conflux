@@ -6,7 +6,7 @@
  * @license MIT
  */
 
-import Crc32 from "./crc.js";
+import Crc32 from './crc.js';
 
 const encoder = new TextEncoder();
 
@@ -27,13 +27,13 @@ class ZipTransformer {
   async transform(entry, ctrl) {
     let name = entry.name.trim();
     const date = new Date(
-      typeof entry.lastModified === "undefined"
+      typeof entry.lastModified === 'undefined'
         ? Date.now()
-        : entry.lastModified
+        : entry.lastModified,
     );
 
-    if (entry.directory && !name.endsWith("/")) name += "/";
-    if (this.files[name]) ctrl.abort(new Error("File already exists."));
+    if (entry.directory && !name.endsWith('/')) name += '/';
+    if (this.files[name]) ctrl.abort(new Error('File already exists.'));
 
     const nameBuf = encoder.encode(name);
     this.filenames.push(name);
@@ -42,10 +42,10 @@ class ZipTransformer {
       directory: !!entry.directory,
       nameBuf,
       offset: this.offset,
-      comment: encoder.encode(entry.comment || ""),
+      comment: encoder.encode(entry.comment || ''),
       compressedLength: BigInt(0),
       uncompressedLength: BigInt(0),
-      header: new Uint8Array(26)
+      header: new Uint8Array(26),
     };
 
     const zipObject = this.files[name];
@@ -59,13 +59,13 @@ class ZipTransformer {
       6,
       (((date.getHours() << 6) | date.getMinutes()) << 5) |
         (date.getSeconds() / 2),
-      true
+      true,
     );
     hdv.setUint16(
       8,
       ((((date.getFullYear() - 1980) << 4) | (date.getMonth() + 1)) << 5) |
         date.getDate(),
-      true
+      true,
     );
     hdv.setUint16(22, nameBuf.length, true);
     data.set([80, 75, 3, 4]);
@@ -113,7 +113,7 @@ class ZipTransformer {
     let index = 0;
     let file;
 
-    this.filenames.forEach(fileName => {
+    this.filenames.forEach((fileName) => {
       file = this.files[fileName];
       length += 46 + file.nameBuf.length + file.comment.length;
     });
@@ -121,7 +121,7 @@ class ZipTransformer {
     const data = new Uint8Array(length + 22);
     const dv = new DataView(data.buffer);
 
-    this.filenames.forEach(fileName => {
+    this.filenames.forEach((fileName) => {
       file = this.files[fileName];
       dv.setUint32(index, 0x504b0102);
       dv.setUint16(index + 4, 0x1400);
