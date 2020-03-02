@@ -44,8 +44,9 @@
     }
   ],
   "files": [
-    "build/write.js",
-    "build/read.js"
+    "src/write.js",
+    "src/read.js",
+    "src/crc.js"
   ],
   "license": "MIT",
   "author": "@transcend-io",
@@ -82,7 +83,6 @@
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
-    "core-js": "3.6.4",
     "pako": "^1.0.11",
     "web-streams-polyfill": "^2.1.0"
   }

@@ -1,13 +1,6 @@
-import Conflux from '../build/write.js';
+import Conflux from '../src/write.js';
 
-const {
-  WritableStream,
-  Response,
-  Benchmark,
-  Blob,
-  JSZip,
-  zip,
-} = window;
+const { WritableStream, Response, Benchmark, Blob, JSZip, zip } = window;
 
 zip.useWebWorkers = false;
 
@@ -51,26 +44,36 @@ suite
     defer: true,
     fn(p) {
       // use a BlobWriter to store the zip into a Blob object
-      zip.createWriter(new zip.BlobWriter('application/zip'), (writer) => {
-        // use a BlobReader object to read the data stored into blob variable
-        writer.add('Hello.txt', new zip.BlobReader(blob), () => {
-          // close the writer and calls callback function
-          writer.close(() => p.resolve());
-        });
-      }, console.error, { dontDeflate: true });
+      zip.createWriter(
+        new zip.BlobWriter('application/zip'),
+        (writer) => {
+          // use a BlobReader object to read the data stored into blob variable
+          writer.add('Hello.txt', new zip.BlobReader(blob), () => {
+            // close the writer and calls callback function
+            writer.close(() => p.resolve());
+          });
+        },
+        console.error,
+        { dontDeflate: true },
+      );
     },
   })
   .add('zip.js - from Text', {
     defer: true,
     fn(p) {
       // use a BlobWriter to store the zip into a Blob object
-      zip.createWriter(new zip.BlobWriter('application/zip'), (writer) => {
-        // use a BlobReader object to read the data stored into blob variable
-        writer.add('Hello.txt', new zip.BlobReader(blob), () => {
-          // close the writer and calls callback function
-          writer.close(() => p.resolve());
-        });
-      }, console.error, { dontDeflate: true });
+      zip.createWriter(
+        new zip.BlobWriter('application/zip'),
+        (writer) => {
+          // use a BlobReader object to read the data stored into blob variable
+          writer.add('Hello.txt', new zip.BlobReader(blob), () => {
+            // close the writer and calls callback function
+            writer.close(() => p.resolve());
+          });
+        },
+        console.error,
+        { dontDeflate: true },
+      );
     },
   })
   .add('Conflux - Response to blob', {
@@ -78,7 +81,9 @@ suite
     fn(p) {
       const { writable, readable } = new Conflux();
       const writer = writable.getWriter();
-      const res = new Response(readable, { headers: { 'content-type': 'application/zip' } });
+      const res = new Response(readable, {
+        headers: { 'content-type': 'application/zip' },
+      });
       res.blob().then(() => p.resolve());
 
       writer.write(file);
@@ -113,7 +118,9 @@ suite
       const writer = writable.getWriter();
       const ws = new WritableStream({
         write() {},
-        close() { p.resolve(); },
+        close() {
+          p.resolve();
+        },
       });
       readable.pipeTo(ws);
       writer.write(file);

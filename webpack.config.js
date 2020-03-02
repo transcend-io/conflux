@@ -24,7 +24,7 @@ const config = {
     filename: '[name].js',
   },
   resolve: {
-    extensions: ['.ts', '.js'],
+    extensions: ['.js'],
   },
   watch: false,
   module: {
