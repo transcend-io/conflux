@@ -6,7 +6,6 @@
  * @license MIT
  */
 
-import { TransformStream } from 'web-streams-polyfill/ponyfill';
 import Crc32 from './crc.js';
 
 const encoder = new TextEncoder();

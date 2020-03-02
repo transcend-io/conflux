@@ -113,6 +113,10 @@ fetch("https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/deflate.zip").then(
 );
 ```
 
+## Troubleshooting
+
+Some browsers don't yet support `TransformStream` - please see [web-streams-polyfill](https://github.com/MattiasBuelens/web-streams-polyfill#readme) for a polyfill.
+
 ## Big Thanks
 
 Cross-browser Testing Platform and Open Source <3 Provided by [Sauce Labs][homepage]

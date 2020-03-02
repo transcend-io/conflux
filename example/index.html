@@ -7,7 +7,7 @@
   <body>
     <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/polyfill.min.js"></script>
     <script type="module">
-      import Zip from '../build/write.js'
+      import Zip from '../src/write.js'
 
       const { readable, writable } = new Zip()
       const writer = writable.getWriter()
