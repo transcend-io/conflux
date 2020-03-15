@@ -12,7 +12,7 @@
     "####### Build #######": "",
     "clean": "rimraf build && rimraf coverage",
     "build": "yarn clean && mkdir -p build && webpack && yarn build:cp-examples && yarn build:markdown",
-    "build:cp-examples": "cp example/downloadZip/index.html build/example/downloadZip/ && cp example/pipes/index.html build/example/pipes/ && cp example/pipes2/index.html build/example/pipes2/ && cp example/reading/index.html build/example/reading/",
+    "build:cp-examples": "rsync -a --include '*/' --include 'index.html' --exclude '*' example/ build/example",
     "build:markdown": "markdown-toc -i --bullets '—' README.md && sed -i -e 's/—/-/g' README.md && rm -f README.md-e"
   },
   "repository": {
