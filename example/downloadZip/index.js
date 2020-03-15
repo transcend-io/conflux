@@ -1,3 +1,4 @@
+import 'regenerator-runtime/runtime.js';
 import { Writer } from '../../src/index.js';
 
 const { readable, writable } = new Writer();
@@ -26,7 +27,8 @@ const pump = () =>
       const a = document.createElement('a');
 
       a.href = URL.createObjectURL(blob);
-      a.innerText = a.download = 'Archive.zip';
+      a.innerText = 'Archive.zip';
+      a.download = 'Archive.zip';
 
       document.body.appendChild(a);
       document.body.appendChild(
@@ -37,7 +39,7 @@ const pump = () =>
     } else {
       chunks.push(it.value);
       size += it.value.length;
-      return pump();
+      pump();
     }
   });
 pump();

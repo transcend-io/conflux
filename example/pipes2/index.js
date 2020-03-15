@@ -1,3 +1,4 @@
+import 'regenerator-runtime/runtime.js';
 import streamSaver from 'streamsaver';
 
 import { Writer } from '../../src/index.js';
@@ -25,13 +26,13 @@ const writer = writable.getWriter();
       const { done, value } = files.next();
       if (done) return ctrl.close();
       const { body } = await fetch(s3 + value);
-      ctrl.enqueue({
+      return ctrl.enqueue({
         name: `/${value}`,
         stream: () => body,
       });
     },
   })
-    .pipeThrough(new Zip())
+    .pipeThrough(new Writer())
     .pipeTo(streamSaver.createWriteStream('conflux.zip'));
 
   writer.close();

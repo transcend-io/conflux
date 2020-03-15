@@ -6,6 +6,7 @@ const { join } = require('path');
 const TerserPlugin = require('terser-webpack-plugin');
 
 const src = join(__dirname, 'src');
+const example = join(__dirname, 'example');
 
 const shouldMinify = ['staging', 'production'].includes(process.env.DEPLOY_ENV);
 
@@ -17,6 +18,10 @@ const config = {
   entry: {
     index: `${src}/index.js`,
     tests: `${src}/index.test.js`,
+    'example/downloadZip/index': `${example}/downloadZip/index.js`,
+    'example/pipes/index': `${example}/pipes/index.js`,
+    'example/pipes2/index': `${example}/pipes2/index.js`,
+    'example/reading/index': `${example}/reading/index.js`,
   },
   output: {
     path: join(__dirname, 'build'),

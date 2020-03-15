@@ -1,3 +1,5 @@
+/* eslint-disable no-restricted-syntax */
+import 'regenerator-runtime/runtime.js';
 import streamSaver from 'streamsaver';
 import { Writer } from '../../src/index.js';
 
