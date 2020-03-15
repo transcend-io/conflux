@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable no-restricted-syntax */
 import 'regenerator-runtime/runtime.js';
 import { Reader } from '../../src/index.js';
