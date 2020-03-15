@@ -1,13 +1,21 @@
 {
   "name": "@transcend-io/conflux",
-  "version": "1.1.2",
+  "version": "2.0.0",
   "description": "Build zip files out of readable streams in the browser",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "test": "node test.js",
-    "browser-test-2": "airtap test.js",
-    "browser-test": "airtap --loopback airtap.local --coverage test.js",
-    "coverage": "nyc report --reporter=text-lcov > coverage.lcov"
+    "####### Test #######": "",
+    "test:local": "karma start karma.local.js",
+    "test:local:rebuild": "yarn && karma start karma.local.js",
+    "test:browserstack": "karma start karma.browserstack.js",
+    "report-coverage": "codecov",
+    "####### Build #######": "",
+    "clean": "rimraf build && rimraf coverage",
+    "build": "yarn clean && mkdir -p build && webpack && yarn build:cp-examples && yarn build:markdown",
+    "build:cp-examples": "rsync -a --include '*/' --include 'index.html' --exclude '*' example/ build/example",
+    "build:markdown": "markdown-toc -i --bullets '—' README.md && sed -i -e 's/—/-/g' README.md && rm -f README.md-e",
+    "####### Hooks #######": "",
+    "prepare": "cd example && yarn && cd .."
   },
   "repository": {
     "type": "git",
@@ -39,9 +47,10 @@
     }
   ],
   "files": [
-    "write.js",
-    "read.js",
-    "crc.js"
+    "src/index.js",
+    "src/write.js",
+    "src/read.js",
+    "src/crc.js"
   ],
   "license": "MIT",
   "author": "@transcend-io",
@@ -50,13 +59,35 @@
   },
   "homepage": "https://github.com/transcend-io/conflux#readme",
   "devDependencies": {
+    "@babel/core": "^7.8.6",
+    "@babel/preset-env": "^7.8.6",
     "airtap": "^3.0.0",
+    "babel-loader": "^8.0.6",
+    "codecov": "^3.6.5",
     "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-config-prettier": "^6.10.0",
     "eslint-plugin-import": "^2.18.0",
+    "eslint-plugin-prettier": "^3.1.2",
     "istanbul": "^0.4.5",
+    "istanbul-instrumenter-loader": "^3.0.1",
+    "karma": "^4.4.1",
+    "karma-browserstack-launcher": "^1.5.1",
+    "karma-chrome-launcher": "^3.1.0",
+    "karma-coverage": "^2.0.1",
+    "karma-sourcemap-loader": "^0.3.7",
+    "karma-tap": "^4.2.0",
+    "karma-webpack": "^4.0.2",
+    "markdown-toc": "^1.2.0",
     "nyc": "^15.0.0",
-    "tape": "^4.11.0"
+    "prettier": "^1.19.1",
+    "tape": "^4.11.0",
+    "terser-webpack-plugin": "^2.3.5",
+    "webpack": "^4.41.6",
+    "webpack-cli": "^3.3.11"
   },
-  "dependencies": {}
+  "dependencies": {
+    "pako": "^1.0.11",
+    "web-streams-polyfill": "^2.1.0"
+  }
 }

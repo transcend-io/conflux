@@ -4,6 +4,8 @@ module.exports = {
   },
   extends: [
     "airbnb-base",
+    'prettier',
+    'plugin:prettier/recommended',
   ],
   rules: {
     "no-bitwise": "off",
@@ -11,5 +13,6 @@ module.exports = {
     "no-await-in-loop": "off",
     "no-plusplus": "off",
     "import/extensions": ["error", "always"],
+    "max-classes-per-file": "off",
   },
 };
