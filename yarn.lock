@@ -8451,6 +8451,11 @@ wd@~1.12.0:
     request "2.88.0"
     vargs "^0.1.0"
 
+web-streams-polyfill@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/web-streams-polyfill/-/web-streams-polyfill-2.1.0.tgz#a4673244f92338e714bad632d2e0ef0004098271"
+  integrity sha512-ZgJ7lsxTM0GR77Nwzt950NHd/CjWzVEct2DH48Dy8/u+3r4TD9o8Bo1VNFK04QajgcEjr0CZPlRhau8LtR3YHQ==
+
 webpack-cli@^3.3.11:
   version "3.3.11"
   resolved "https://registry.yarnpkg.com/webpack-cli/-/webpack-cli-3.3.11.tgz#3bf21889bf597b5d82c38f215135a411edfdc631"

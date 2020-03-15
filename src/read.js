@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 /**
  * Conflux
  * Read (and build) zip files with whatwg streams in the browser.
@@ -5,7 +6,8 @@
  * @author Transcend Inc. <https://transcend.io>
  * @license MIT
  */
-
+// eslint-disable-next-line import/extensions
+import { TransformStream } from 'web-streams-polyfill/ponyfill';
 import Inflate from 'pako';
 import Crc32 from './crc.js';
 
@@ -209,13 +211,13 @@ class Entry {
 
   arrayBuffer() {
     return new Response(this.stream()).arrayBuffer().catch((e) => {
-      throw new Error('Failed to read Entry');
+      throw new Error(`Failed to read Entry\n${e}`);
     });
   }
 
   text() {
     return new Response(this.stream()).text().catch((e) => {
-      throw new Error('Failed to read Entry');
+      throw new Error(`Failed to read Entry\n${e}`);
     });
   }
 
@@ -227,7 +229,7 @@ class Entry {
           new File([blob], this.name, { lastModified: this.lastModified }),
       )
       .catch((e) => {
-        throw new Error('Failed to read Entry');
+        throw new Error(`Failed to read Entry\n${e}`);
       });
   }
 }
@@ -238,6 +240,24 @@ async function* Reader(file) {
   // so we only have to search the last 64K + 22 bytes of a archive for EOCDR signature (0x06054b50).
   if (file.size < EOCDR_MIN) throw new Error(ERR_BAD_FORMAT);
 
+  // seek last length bytes of file for EOCDR
+  async function doSeek(length) {
+    const ab = await file.slice(file.size - length).arrayBuffer();
+    const bytes = new Uint8Array(ab);
+    for (let i = bytes.length - EOCDR_MIN; i >= 0; i--) {
+      if (
+        bytes[i] === 0x50 &&
+        bytes[i + 1] === 0x4b &&
+        bytes[i + 2] === 0x05 &&
+        bytes[i + 3] === 0x06
+      ) {
+        return new DataView(bytes.buffer, i, EOCDR_MIN);
+      }
+    }
+
+    return null;
+  }
+
   // In most cases, the EOCDR is EOCDR_MIN bytes long
   let dv =
     (await doSeek(EOCDR_MIN)) || (await doSeek(Math.min(EOCDR_MAX, file.size)));
@@ -247,7 +267,7 @@ async function* Reader(file) {
   let fileslength = dv.getUint16(8, true);
   let centralDirSize = dv.getUint32(12, true);
   let centralDirOffset = dv.getUint32(16, true);
-  const fileCommentLength = dv.getUint16(20, true);
+  // const fileCommentLength = dv.getUint16(20, true);
 
   const isZip64 = centralDirOffset === MAX_VALUE_32BITS;
 
@@ -293,24 +313,6 @@ async function* Reader(file) {
     yield new Entry(new DataView(bytes.buffer, index, size), file);
 
     index += size;
-  }
-
-  // seek last length bytes of file for EOCDR
-  async function doSeek(length) {
-    const ab = await file.slice(file.size - length).arrayBuffer();
-    const bytes = new Uint8Array(ab);
-    for (let i = bytes.length - EOCDR_MIN; i >= 0; i--) {
-      if (
-        bytes[i] === 0x50 &&
-        bytes[i + 1] === 0x4b &&
-        bytes[i + 2] === 0x05 &&
-        bytes[i + 3] === 0x06
-      ) {
-        return new DataView(bytes.buffer, i, EOCDR_MIN);
-      }
-    }
-
-    return null;
   }
 }
 

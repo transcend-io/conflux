@@ -1,3 +1,4 @@
+/* global BigInt */
 /**
  * Conflux
  * Build (and read) zip files with whatwg streams in the browser.
@@ -5,7 +6,8 @@
  * @author Transcend Inc. <https://transcend.io>
  * @license MIT
  */
-
+// eslint-disable-next-line import/extensions
+import { TransformStream } from 'web-streams-polyfill/ponyfill';
 import Crc32 from './crc.js';
 
 const encoder = new TextEncoder();
