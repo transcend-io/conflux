@@ -1,6 +1,6 @@
 {
   "name": "@transcend-io/conflux",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Build zip files out of readable streams in the browser",
   "main": "src/index.js",
   "scripts": {
@@ -61,7 +61,6 @@
   "devDependencies": {
     "@babel/core": "^7.8.6",
     "@babel/preset-env": "^7.8.6",
-    "airtap": "^3.0.0",
     "babel-loader": "^8.0.6",
     "codecov": "^3.6.5",
     "eslint": "^6.8.0",
@@ -79,7 +78,6 @@
     "karma-tap": "^4.2.0",
     "karma-webpack": "^4.0.2",
     "markdown-toc": "^1.2.0",
-    "nyc": "^15.0.0",
     "prettier": "^1.19.1",
     "tape": "^4.11.0",
     "terser-webpack-plugin": "^2.3.5",
