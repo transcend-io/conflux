@@ -1,0 +1,14 @@
+{
+  "name": "conflux-examples",
+  "version": "1.0.0",
+  "description": "Conflux examples",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Transcend Inc.",
+  "license": "MIT",
+  "dependencies": {
+    "streamsaver": "^2.0.3"
+  }
+}

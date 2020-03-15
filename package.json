@@ -2,7 +2,7 @@
   "name": "@transcend-io/conflux",
   "version": "2.0.0",
   "description": "Build zip files out of readable streams in the browser",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "####### Test #######": "",
     "test:local": "karma start karma.local.js",
@@ -44,6 +44,7 @@
     }
   ],
   "files": [
+    "src/index.js",
     "src/write.js",
     "src/read.js",
     "src/crc.js"

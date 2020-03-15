@@ -15,8 +15,7 @@ const config = {
   },
   mode: shouldMinify ? 'production' : 'development',
   entry: {
-    read: `${src}/read.js`,
-    write: `${src}/write.js`,
+    index: `${src}/index.js`,
     tests: `${src}/index.test.js`,
   },
   output: {
