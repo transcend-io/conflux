@@ -1,8 +1,24 @@
 {
     "cSpell.words": [
+        "a",
         "airtap",
+        "browserstack",
+        "build",
         "codecov",
+        "example",
+        "exclude",
+        "html",
+        "include",
+        "index",
+        "instrumenter",
+        "istanbul",
+        "js",
+        "karma",
+        "loader",
         "mjau",
-        "streamsaver"
+        "rsync",
+        "sourcemap",
+        "streamsaver",
+        "wärting"
     ]
 }
