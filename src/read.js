@@ -7,9 +7,14 @@
  * @license MIT
  */
 // eslint-disable-next-line import/extensions
-import { TransformStream } from 'web-streams-polyfill/ponyfill';
-import Inflate from 'pako';
+import { TransformStream as PollyTransform } from 'web-streams-polyfill/ponyfill';
+import { Inflate } from 'pako';
 import Crc32 from './crc.js';
+
+const TransformStream =
+  globalThis.TransformStream ||
+  globalThis.WebStreamsPolyfill?.TransformStream ||
+  PollyTransform
 
 class Inflator {
   async start(ctrl) {
@@ -136,15 +141,15 @@ class Entry {
     const t = this.dataView.getUint32(12, true);
 
     return new Date(
-      Date.UTC(
+      // Date.UTC(
         ((t >> 25) & 0x7f) + 1980, // year
         ((t >> 21) & 0x0f) - 1, // month
         (t >> 16) & 0x1f, // day
         (t >> 11) & 0x1f, // hour
         (t >> 5) & 0x3f, // minute
         (t & 0x1f) << 1,
-      ),
-    ); // second
+      // ),
+    );
   }
 
   get lastModified() {
@@ -152,8 +157,8 @@ class Entry {
   }
 
   get name() {
-    if (!this.bitFlag && this.extraFields && this.extraFields[0x7075]) {
-      return decoder.decode(this.extraFields[0x7075].buffer.slice(5));
+    if (!this.bitFlag && this._extraFields && this._extraFields[0x7075]) {
+      return decoder.decode(this._extraFields[0x7075].buffer.slice(5));
     }
 
     const dv = this.dataView;
@@ -167,7 +172,7 @@ class Entry {
 
   get size() {
     const size = this.dataView.getUint32(24, true);
-    return size === MAX_VALUE_32BITS ? this.extraFields[1].getUint8(0) : size;
+    return size === MAX_VALUE_32BITS ? this._extraFields[1].getUint8(0) : size;
   }
 
   stream() {
