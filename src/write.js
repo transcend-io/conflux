@@ -11,6 +11,7 @@ import { TransformStream as PollyTransform } from 'web-streams-polyfill/ponyfill
 import Crc32 from './crc.js';
 
 const encoder = new TextEncoder();
+const BigInt = globalThis.BigInt || globalThis.Number
 
 class ZipTransformer {
   constructor() {

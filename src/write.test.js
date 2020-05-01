@@ -17,13 +17,22 @@ const fileLikeUtf8 = { comment: `I'm a entry comment with utf8`, stream: () => n
 const folder = { name: 'folder/', directory: true }
 
 test('All in one big test', async (t) => {
-  const zip = await new Response(streamFrom([
-    helloWorld,
-    fileLikeUtf8,
-    folder,
-  ]).pipeThrough(new Writer())).blob()
+  const { readable, writable } = new Writer()
+  const writer = writable.getWriter()
+  writer.write(helloWorld)
+  writer.write(fileLikeUtf8)
+  writer.write(folder)
+  writer.close()
 
-  let entry, it = Reader(zip)
+  let chunks = []
+  let reader = readable.getReader()
+  for(;;) {
+    let v = await reader.read()
+    if (v.done) break;
+    chunks.push(v.value)
+  }
+
+  let entry, it = Reader(new Blob(chunks))
 
   // entry 1, Writer accepts native File object
   entry = (await it.next()).value
