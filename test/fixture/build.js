@@ -1,6 +1,7 @@
 // TODO: write JSON files, not JS. Make fixture.test.js static and import dynamic JSON, and import a new file called mod.js
 
 const fs = require('fs').promises
+const path = require('path');
 
 const mod = () => ((types, b64) => ({
   replacer(key) {
@@ -29,5 +30,5 @@ fs.readdir('.').then(async files => {
     const { reviver } = mod();
     export default JSON.parse('${JSON.stringify(fixtures, replacer)}', reviver);
   `
-  fs.writeFile('./fixture.test.js', js)
+  fs.writeFile(path.resolve(__dirname, './fixture.test.js'), js)
 })
