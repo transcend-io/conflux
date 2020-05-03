@@ -20,5 +20,6 @@
         "sourcemap",
         "streamsaver",
         "wärting"
-    ]
+    ],
+    "eslint.enable": false
 }
