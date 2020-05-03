@@ -9,6 +9,7 @@
     "test:local:rebuild": "yarn && karma start karma.local.js",
     "test:browserstack": "karma start karma.browserstack.js",
     "report-coverage": "codecov",
+    "rebuild-fixtures": "node test/fixture/build.js",
     "####### Build #######": "",
     "clean": "rimraf build && rimraf coverage",
     "build": "yarn clean && mkdir -p build && webpack && yarn build:cp-examples && yarn build:markdown",
