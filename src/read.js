@@ -1,4 +1,4 @@
-/* global BigInt */
+/* global globalThis */
 /* eslint-disable no-underscore-dangle */
 /**
  * Conflux
@@ -122,12 +122,12 @@ class Entry {
 
     return new Date(
       // Date.UTC(
-        ((t >> 25) & 0x7f) + 1980, // year
-        ((t >> 21) & 0x0f) - 1, // month
-        (t >> 16) & 0x1f, // day
-        (t >> 11) & 0x1f, // hour
-        (t >> 5) & 0x3f, // minute
-        (t & 0x1f) << 1,
+      ((t >> 25) & 0x7f) + 1980, // year
+      ((t >> 21) & 0x0f) - 1, // month
+      (t >> 16) & 0x1f, // day
+      (t >> 11) & 0x1f, // hour
+      (t >> 5) & 0x3f, // minute
+      (t & 0x1f) << 1,
       // ),
     );
   }
@@ -156,12 +156,13 @@ class Entry {
   }
 
   stream() {
-    let self = this;
-    let crc = new Crc32();
+    const self = this;
+    const crc = new Crc32();
     let inflator;
-    let onEnd = ctrl => crc.get() === self.crc32
-      ? ctrl.close()
-      : ctrl.error(new Error("The crc32 checksum don't match"));
+    const onEnd = (ctrl) =>
+      crc.get() === self.crc32
+        ? ctrl.close()
+        : ctrl.error(new Error("The crc32 checksum don't match"));
 
     return new ReadableStream({
       async start(ctrl) {
@@ -175,15 +176,18 @@ class Entry {
         const localFileOffset = uint16e(bytes, 0) + uint16e(bytes, 2) + 30;
         const start = self.offset + localFileOffset;
         const end = start + self.compressedSize;
-        this.reader = self._fileLike.slice(start, end).stream().getReader();
+        this.reader = self._fileLike
+          .slice(start, end)
+          .stream()
+          .getReader();
 
         if (self.compressionMethod) {
           inflator = new Inflate({ raw: true });
-          inflator.onData = chunk => {
+          inflator.onData = (chunk) => {
             crc.append(chunk);
             ctrl.enqueue(chunk);
-          }
-          inflator.onEnd = () => onEnd(ctrl)
+          };
+          inflator.onEnd = () => onEnd(ctrl);
         }
       },
       async pull(ctrl) {
@@ -191,10 +195,10 @@ class Entry {
         inflator
           ? !v.done && inflator.push(v.value)
           : v.done
-            ? onEnd(ctrl)
-            : (ctrl.enqueue(v.value), crc.append(v.value));
-      }
-    })
+          ? onEnd(ctrl)
+          : (ctrl.enqueue(v.value), crc.append(v.value));
+      },
+    });
   }
 
   arrayBuffer() {
@@ -220,6 +224,40 @@ class Entry {
         throw new Error(`Failed to read Entry\n${e}`);
       });
   }
+}
+
+function getBigInt64(view, position, littleEndian = false) {
+  if ('getBigInt64' in DataView.prototype) {
+    return view.getBigInt64(position, littleEndian);
+  }
+
+  let value = BigInt(0);
+  const isNegative =
+    (view.getUint8(position + (littleEndian ? 7 : 0)) & 0x80) > 0;
+  let carrying = true;
+
+  for (let i = 0; i < 8; i++) {
+    let byte = view.getUint8(position + (littleEndian ? i : 7 - i));
+
+    if (isNegative) {
+      if (carrying) {
+        if (byte != 0x00) {
+          byte = ~(byte - 1) & 0xff;
+          carrying = false;
+        }
+      } else {
+        byte = ~byte & 0xff;
+      }
+    }
+
+    value += BigInt(byte) * Math.pow(BigInt(256), BigInt(i));
+  }
+
+  if (isNegative) {
+    value = -value;
+  }
+
+  return value;
 }
 
 async function* Reader(file) {
@@ -287,6 +325,7 @@ async function* Reader(file) {
   const end = centralDirOffset + centralDirSize;
   const blob = file.slice(start, end);
   const bytes = new Uint8Array(await blob.arrayBuffer());
+
   for (let i = 0, index = 0; i < fileslength; i++) {
     const size =
       uint16e(bytes, index + 28) + // filenameLength
@@ -305,31 +344,3 @@ async function* Reader(file) {
 }
 
 export default Reader;
-
-function getBigInt64( view, position, littleEndian = false ) {
-  if ( "getBigInt64" in DataView.prototype ) {
-    return view.getBigInt64( position, littleEndian );
-  } else {
-    let value = BigInt(0);
-    let isNegative = ( view.getUint8( position + ( littleEndian ? 7 : 0 ) ) & 0x80 ) > 0;
-    let carrying = true;
-    for ( let i = 0; i < 8; i++ ) {
-      let byte = view.getUint8( position + ( littleEndian ? i : 7 - i ) );
-      if ( isNegative ) {
-        if ( carrying ) {
-          if ( byte != 0x00 ) {
-            byte = (~(byte - 1))&0xFF;
-            carrying = false;
-          }
-        } else {
-          byte = (~byte) & 0xFF;
-        }
-      }
-      value += BigInt(byte) * Math.pow(BigInt(256), BigInt(i));
-    }
-    if ( isNegative ) {
-      value = -value;
-    }
-    return value;
-  }
-}

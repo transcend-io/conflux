@@ -17,7 +17,7 @@ class Crc32 {
   }
 }
 
-Crc32.prototype.table = ((table, i,j,t) => {
+Crc32.prototype.table = ((table, i, j, t) => {
   for (i = 0; i < 256; i++) {
     t = i;
     for (j = 0; j < 8; j++) {
@@ -26,6 +26,6 @@ Crc32.prototype.table = ((table, i,j,t) => {
     table[i] = t;
   }
   return table;
-})([], 0,0,0);
+})([], 0, 0, 0);
 
 export default Crc32;

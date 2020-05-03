@@ -42,19 +42,20 @@ npm install --save @transcend-io/conflux
 ```
 
 ```js
-import Zip from "@transcend-io/conflux/write";
+import { Writer } from '@transcend-io/conflux';
 
-const { readable, writable } = new Zip();
+const { readable, writable } = new Writer();
 ```
 
 ### Writing a ZIP
 
 ```js
-import Zip from "@transcend-io/conflux/write";
+import { Writer } from '@transcend-io/conflux';
+
 import streamSaver from "streamsaver";
 
 // Set up conflux
-const { readable, writable } = new Zip();
+const { readable, writable } = new Writer();
 const writer = writable.getWriter();
 
 // Set up streamsaver
@@ -75,6 +76,12 @@ writer.close();
 ### Incorporating other streams
 
 ```js
+import { Writer } from '@transcend-io/conflux';
+
+const { readable, writable } = new Writer();
+const writer = writable.getWriter();
+const reader = readable.getReader();
+
 (async () => {
   writer.write({
     name: "/cat.txt",

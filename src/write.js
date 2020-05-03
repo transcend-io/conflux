@@ -1,4 +1,4 @@
-/* global BigInt */
+/* global globalThis */
 /**
  * Conflux
  * Build (and read) zip files with whatwg streams in the browser.
@@ -11,7 +11,7 @@ import { TransformStream as PollyTransform } from 'web-streams-polyfill/ponyfill
 import Crc32 from './crc.js';
 
 const encoder = new TextEncoder();
-const BigInt = globalThis.BigInt || globalThis.Number
+const BigInt = globalThis.BigInt || globalThis.Number;
 
 class ZipTransformer {
   constructor() {
@@ -151,11 +151,12 @@ class ZipTransformer {
   }
 }
 
-const ts = globalThis.TransformStream ||
-           globalThis.WebStreamsPolyfill?.TransformStream ||
-           PollyTransform
+const ts =
+  globalThis.TransformStream ||
+  (globalThis.WebStreamsPolyfill &&
+    globalThis.WebStreamsPolyfill.TransformStream) ||
+  PollyTransform;
 
-// eslint-disable-next-line no-undef
 class Writer extends ts {
   constructor() {
     super(new ZipTransformer());

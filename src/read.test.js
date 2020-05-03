@@ -3,30 +3,30 @@ import { Reader } from './index.js';
 import fixtures from '../test/fixture/fixture.test.js';
 
 async function isSmiley(entry) {
-  let a1 = Buffer.from(await entry.arrayBuffer());
-  let a2 = Buffer.from(await fixtures['smile.gif'].arrayBuffer());
+  const a1 = Buffer.from(await entry.arrayBuffer());
+  const a2 = Buffer.from(await fixtures['smile.gif'].arrayBuffer());
   return entry.size === 41 && entry.directory === false && a1.equals(a2);
 }
 
 // All test are orderd by filename
 
 test('all_appended_bytes.zip', async (t) => {
-  const it = Reader(fixtures['all_appended_bytes.zip'])
+  const it = Reader(fixtures['all_appended_bytes.zip']);
 
   // entry 1
-  let entry = (await it.next()).value
+  let entry = (await it.next()).value;
   t.equal(entry.name, 'Hello.txt');
   t.equal(entry.directory, false);
   t.equal(entry.zip64, false);
   t.equal(await entry.text(), 'Hello World\n');
 
   // entry 2
-  entry = (await it.next()).value
+  entry = (await it.next()).value;
   t.equal(entry.name, 'images/');
   t.equal(entry.directory, true);
 
   // entry 3
-  entry = (await it.next()).value
+  entry = (await it.next()).value;
   t.equal(entry.name, 'images/smile.gif');
   t.equal(await isSmiley(entry), true);
 
@@ -35,33 +35,35 @@ test('all_appended_bytes.zip', async (t) => {
 });
 
 test('all_missing_bytes.zip', async (t) => {
-  const err = await Reader(fixtures['all_missing_bytes.zip']).next().catch(a => a);
-  t.equal(err.message, 'Invalid ZIP file.')
+  const err = await Reader(fixtures['all_missing_bytes.zip'])
+    .next()
+    .catch((a) => a);
+  t.equal(err.message, 'Invalid ZIP file.');
   t.end();
 });
 
 test.skip('all_prepended_bytes.zip', async (t) => {
-  const it = Reader(fixtures['all_prepended_bytes.zip'])
+  const it = Reader(fixtures['all_prepended_bytes.zip']);
   t.ok((await it.next()).done);
   t.end();
 });
 
 test('all-stream.zip', async (t) => {
-  const it = Reader(fixtures['all-stream.zip'])
+  const it = Reader(fixtures['all-stream.zip']);
 
   // entry 1
-  let entry = (await it.next()).value
+  let entry = (await it.next()).value;
   t.equal(entry.name, 'Hello.txt');
   t.equal(entry.directory, false);
   t.equal(await entry.text(), 'Hello World\n');
 
   // entry 2
-  entry = (await it.next()).value
+  entry = (await it.next()).value;
   t.equal(entry.name, 'images/');
   t.equal(entry.directory, true);
 
   // entry 3
-  entry = (await it.next()).value
+  entry = (await it.next()).value;
   t.equal(entry.name, 'images/smile.gif');
   t.equal(await isSmiley(entry), true);
 
@@ -70,23 +72,23 @@ test('all-stream.zip', async (t) => {
 });
 
 test('all.7zip.zip', async (t) => {
-  const it = Reader(fixtures['all.7zip.zip'])
+  const it = Reader(fixtures['all.7zip.zip']);
 
   // entry 1
-  let entry = (await it.next()).value
+  let entry = (await it.next()).value;
   t.equal(entry.name, 'Hello.txt');
   t.equal(entry.directory, false);
   t.equal(entry.comment, '');
   t.equal(await entry.text(), 'Hello World\n');
 
   // entry 2
-  entry = (await it.next()).value
+  entry = (await it.next()).value;
   t.equal(entry.name, 'images/');
   t.equal(entry.directory, true);
   t.equal(entry.comment, '');
 
   // entry 3
-  entry = (await it.next()).value
+  entry = (await it.next()).value;
   t.equal(entry.name, 'images/smile.gif');
   t.equal(await isSmiley(entry), true);
   t.equal(entry.comment, '');
@@ -96,17 +98,17 @@ test('all.7zip.zip', async (t) => {
 });
 
 test('all.windows.zip', async (t) => {
-  const it = Reader(fixtures['all.windows.zip'])
+  const it = Reader(fixtures['all.windows.zip']);
 
   // entry 1
-  let entry = (await it.next()).value
+  let entry = (await it.next()).value;
   t.equal(entry.name, 'Hello.txt');
   t.equal(entry.directory, false);
   t.equal(entry.comment, '');
   t.equal(await entry.text(), 'Hello World\n');
 
   // entry 2
-  entry = (await it.next()).value
+  entry = (await it.next()).value;
   t.equal(entry.name, 'images/smile.gif');
   t.equal(await isSmiley(entry), true);
 
@@ -115,23 +117,23 @@ test('all.windows.zip', async (t) => {
 });
 
 test('all.zip', async (t) => {
-  const it = Reader(fixtures['all.zip'])
+  const it = Reader(fixtures['all.zip']);
 
   // entry 1
-  let entry = (await it.next()).value
+  let entry = (await it.next()).value;
   t.equal(entry.name, 'Hello.txt');
   t.equal(entry.directory, false);
   t.equal(entry.comment, '');
   t.equal(await entry.text(), 'Hello World\n');
 
   // entry 2
-  entry = (await it.next()).value
+  entry = (await it.next()).value;
   t.equal(entry.name, 'images/');
   t.equal(entry.directory, true);
   t.equal(entry.comment, '');
 
   // entry 3
-  entry = (await it.next()).value
+  entry = (await it.next()).value;
   t.equal(entry.name, 'images/smile.gif');
   t.equal(await isSmiley(entry), true);
 
@@ -140,10 +142,10 @@ test('all.zip', async (t) => {
 });
 
 test('archive_comment.zip', async (t) => {
-  const it = Reader(fixtures['archive_comment.zip'])
+  const it = Reader(fixtures['archive_comment.zip']);
 
   // entry 1
-  let entry = (await it.next()).value
+  const entry = (await it.next()).value;
   t.equal(entry.name, 'Hello.txt');
   t.equal(entry.directory, false);
   t.equal(entry.comment, 'entry comment');
@@ -154,10 +156,10 @@ test('archive_comment.zip', async (t) => {
 });
 
 test('backslash.zip', async (t) => {
-  const it = Reader(fixtures['backslash.zip'])
+  const it = Reader(fixtures['backslash.zip']);
 
   // entry 1
-  let entry = (await it.next()).value
+  const entry = (await it.next()).value;
   t.equal(entry.name, 'Hel\\lo.txt');
   t.equal(entry.directory, false);
   t.equal(entry.comment, '');
@@ -170,10 +172,10 @@ test('backslash.zip', async (t) => {
 // use -fd to force data descriptors as if streaming
 // zip -fd -0 data_descriptor.zip Hello.txt
 test('data_descriptor.zip', async (t) => {
-  const it = Reader(fixtures['data_descriptor.zip'])
+  const it = Reader(fixtures['data_descriptor.zip']);
 
   // entry 1
-  let entry = (await it.next()).value
+  const entry = (await it.next()).value;
   t.equal(entry.name, 'Hello.txt');
   t.equal(entry.directory, false);
   t.equal(entry.comment, '');
@@ -185,17 +187,20 @@ test('data_descriptor.zip', async (t) => {
 
 // zip -6 -X -fd deflate-stream.zip Hello.txt
 test('deflate-stream.zip', async (t) => {
-  const it = Reader(fixtures['deflate-stream.zip'])
+  const it = Reader(fixtures['deflate-stream.zip']);
 
   // entry 1
-  let entry = (await it.next()).value
+  const entry = (await it.next()).value;
   t.equal(entry.name, 'Hello.txt');
   t.equal(entry.directory, false);
   t.equal(entry.size, 94);
   t.equal(entry.compressedSize, 73);
   t.equal(entry.comment, '');
   t.equal(entry.compressionMethod, 8);
-  t.equal(await entry.text(), 'This a looong file : we need to see the difference between the different compression methods.\n');
+  t.equal(
+    await entry.text(),
+    'This a looong file : we need to see the difference between the different compression methods.\n',
+  );
 
   t.ok((await it.next()).done);
   t.end();
@@ -203,17 +208,20 @@ test('deflate-stream.zip', async (t) => {
 
 // zip -6 -X deflate.zip Hello.txt
 test('deflate.zip', async (t) => {
-  const it = Reader(fixtures['deflate.zip'])
+  const it = Reader(fixtures['deflate.zip']);
 
   // entry 1
-  let entry = (await it.next()).value
+  const entry = (await it.next()).value;
   t.equal(entry.name, 'Hello.txt');
   t.equal(entry.directory, false);
   t.equal(entry.size, 94);
   t.equal(entry.compressedSize, 73);
   t.equal(entry.comment, '');
   t.equal(entry.compressionMethod, 8);
-  t.equal(await entry.text(), 'This a looong file : we need to see the difference between the different compression methods.\n');
+  t.equal(
+    await entry.text(),
+    'This a looong file : we need to see the difference between the different compression methods.\n',
+  );
 
   t.ok((await it.next()).done);
   t.end();
@@ -221,7 +229,7 @@ test('deflate.zip', async (t) => {
 
 // zip -0 -X empty.zip plop && zip -d empty.zip plop
 test('empty.zip', async (t) => {
-  const it = Reader(fixtures['empty.zip'])
+  const it = Reader(fixtures['empty.zip']);
   t.ok((await it.next()).done);
   t.end();
 });
@@ -231,7 +239,7 @@ test('encrypted.zip', async (t) => {
   const it = Reader(fixtures['encrypted.zip']);
 
   // entry 1
-  let entry = (await it.next()).value
+  const entry = (await it.next()).value;
   t.equal(entry.name, 'Hello.txt');
   t.equal(entry.directory, false);
   t.equal(entry.size, 12);
@@ -252,7 +260,7 @@ test('extra_attributes.zip', async (t) => {
   const it = Reader(fixtures['extra_attributes.zip']);
 
   // entry 1
-  let entry = (await it.next()).value
+  const entry = (await it.next()).value;
   t.equal(entry.name, 'Hello.txt');
   t.equal(entry.directory, false);
   t.equal(entry.size, 12);
@@ -269,7 +277,7 @@ test('folder.zip', async (t) => {
   const it = Reader(fixtures['folder.zip']);
 
   // entry 1
-  let entry = (await it.next()).value
+  const entry = (await it.next()).value;
   t.equal(entry.name, 'folder/');
   t.equal(entry.directory, true);
   t.equal(entry.size, 0);
@@ -285,7 +293,7 @@ test('image.zip', async (t) => {
   const it = Reader(fixtures['image.zip']);
 
   // entry 1
-  let entry = (await it.next()).value
+  const entry = (await it.next()).value;
   t.equal(entry.name, 'smile.gif');
   t.equal(entry.directory, false);
   t.equal(entry.size, 41);
@@ -303,7 +311,7 @@ test('local_encoding_in_name.zip', async (t) => {
   // ["Новая папка/Новый текстовый документ.txt"]
 
   // entry 1
-  let entry = (await it.next()).value
+  const entry = (await it.next()).value;
 
   const dv = entry.dataView;
   const uint8 = new Uint8Array(
@@ -327,9 +335,9 @@ test('nested_data_descriptor.zip', async (t) => {
   const it = Reader(fixtures['nested_data_descriptor.zip']);
 
   // entry 1
-  let entry = (await it.next()).value;
-  let a1 = await entry.arrayBuffer();
-  let a2 = await fixtures['data_descriptor.zip'].arrayBuffer();
+  const entry = (await it.next()).value;
+  const a1 = await entry.arrayBuffer();
+  const a2 = await fixtures['data_descriptor.zip'].arrayBuffer();
   t.deepLooseEqual(new Uint8Array(a1), new Uint8Array(a2));
 
   t.ok((await it.next()).done);
@@ -341,9 +349,9 @@ test('nested_data_descriptor.zip', async (t) => {
   const it = Reader(fixtures['nested_data_descriptor.zip']);
 
   // entry 1
-  let entry = (await it.next()).value;
-  let a1 = await entry.arrayBuffer();
-  let a2 = await fixtures['data_descriptor.zip'].arrayBuffer();
+  const entry = (await it.next()).value;
+  const a1 = await entry.arrayBuffer();
+  const a2 = await fixtures['data_descriptor.zip'].arrayBuffer();
   t.deepLooseEqual(new Uint8Array(a1), new Uint8Array(a2));
 
   t.ok((await it.next()).done);
@@ -355,9 +363,9 @@ test('nested_zip64.zip', async (t) => {
   const it = Reader(fixtures['nested_zip64.zip']);
 
   // entry 1
-  let entry = (await it.next()).value;
-  let a1 = await entry.arrayBuffer();
-  let a2 = await fixtures['zip64.zip'].arrayBuffer();
+  const entry = (await it.next()).value;
+  const a1 = await entry.arrayBuffer();
+  const a2 = await fixtures['zip64.zip'].arrayBuffer();
   t.equal(entry.zip64, true);
   t.deepLooseEqual(new Uint8Array(a1), new Uint8Array(a2));
 
@@ -396,11 +404,11 @@ test('pile_of_poo.zip', async (t) => {
   // see http://mathiasbynens.be/notes/javascript-unicode
   // but escaped, to avoid troubles
   // thanks http://mothereff.in/js-escapes#1I%C3%B1t%C3%ABrn%C3%A2ti%C3%B4n%C3%A0liz%C3%A6ti%C3%B8n%E2%98%83%F0%9F%92%A9
-  var text = 'I\xF1t\xEBrn\xE2ti\xF4n\xE0liz\xE6ti\xF8n\u2603\uD83D\uDCA9';
+  const text = 'I\xF1t\xEBrn\xE2ti\xF4n\xE0liz\xE6ti\xF8n\u2603\uD83D\uDCA9';
 
   // entry 1
-  let entry = (await it.next()).value;
-  t.equal(entry.name, text + '.txt');
+  const entry = (await it.next()).value;
+  t.equal(entry.name, `${text}.txt`);
   t.equal(entry.comment, text);
   t.equal(await entry.text(), text);
 
@@ -413,7 +421,7 @@ test('slashes_and_izarc.zip', async (t) => {
   const it = Reader(fixtures['slashes_and_izarc.zip']);
 
   // entry 1
-  let entry = (await it.next()).value;
+  const entry = (await it.next()).value;
   t.equal(entry.name, 'test\\Hello.txt');
   t.equal(await entry.text(), 'Hello world\r\n');
 
@@ -426,11 +434,14 @@ test('store-stream.zip', async (t) => {
   const it = Reader(fixtures['store-stream.zip']);
 
   // entry 1
-  let entry = (await it.next()).value;
+  const entry = (await it.next()).value;
   t.equal(entry.name, 'Hello.txt');
   t.equal(entry.size, 94);
   t.equal(entry.compressedSize, 94);
-  t.equal(await entry.text(), 'This a looong file : we need to see the difference between the different compression methods.\n');
+  t.equal(
+    await entry.text(),
+    'This a looong file : we need to see the difference between the different compression methods.\n',
+  );
 
   t.ok((await it.next()).done);
   t.end();
@@ -441,11 +452,14 @@ test('store.zip', async (t) => {
   const it = Reader(fixtures['store.zip']);
 
   // entry 1
-  let entry = (await it.next()).value;
+  const entry = (await it.next()).value;
   t.equal(entry.name, 'Hello.txt');
   t.equal(entry.size, 94);
   t.equal(entry.compressedSize, 94);
-  t.equal(await entry.text(), 'This a looong file : we need to see the difference between the different compression methods.\n');
+  t.equal(
+    await entry.text(),
+    'This a looong file : we need to see the difference between the different compression methods.\n',
+  );
 
   t.ok((await it.next()).done);
   t.end();
@@ -476,7 +490,7 @@ test('text.zip', async (t) => {
   const it = Reader(fixtures['text.zip']);
 
   // entry 1
-  let entry = (await it.next()).value;
+  const entry = (await it.next()).value;
   t.equal(entry.name, 'Hello.txt');
   t.equal(entry.size, 12);
   t.equal(entry.directory, false);
@@ -492,7 +506,7 @@ test('utf8_in_name.zip', async (t) => {
   const it = Reader(fixtures['utf8_in_name.zip']);
 
   // entry 1
-  let entry = (await it.next()).value;
+  const entry = (await it.next()).value;
   t.equal(entry.name, '€15.txt');
   t.equal(entry.directory, false);
   t.equal(entry.size, 6);
@@ -508,7 +522,7 @@ test('utf8.zip', async (t) => {
   const it = Reader(fixtures['utf8.zip']);
 
   // entry 1
-  let entry = (await it.next()).value;
+  const entry = (await it.next()).value;
   t.equal(entry.name, 'amount.txt');
   t.equal(entry.directory, false);
   t.equal(entry.size, 6);
@@ -519,14 +533,13 @@ test('utf8.zip', async (t) => {
   t.end();
 });
 
-
 // Created with winrar
 // winrar will replace the euro symbol with a '_' but set the correct unicode path in an extra field.
 test('winrar_utf8_in_name.zip', async (t) => {
   const it = Reader(fixtures['winrar_utf8_in_name.zip']);
 
   // entry 1
-  let entry = (await it.next()).value;
+  const entry = (await it.next()).value;
   t.equal(entry.name, '€15.txt');
   t.equal(entry.directory, false);
   t.equal(entry.size, 6);
@@ -554,7 +567,7 @@ test('zip64.zip', async (t) => {
   const it = Reader(fixtures['zip64.zip']);
 
   // entry 1
-  let entry = (await it.next()).value;
+  const entry = (await it.next()).value;
   t.equal(entry.name, 'Hello.txt');
   t.equal(entry.directory, false);
   t.equal(entry.size, 12);

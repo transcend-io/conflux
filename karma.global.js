@@ -1,7 +1,19 @@
 const { join } = require('path');
 const webpackConfig = require('./webpack.config.js');
 
+const CI = process.env.CI;
 const src = join(__dirname, 'src');
+
+const istanbul = CI ? {
+  // Instrument sourcemaps for code coverage on CI
+  test: /\.(js)?$/,
+  include: [src],
+  use: {
+    loader: 'istanbul-instrumenter-loader',
+    options: { esModules: true },
+  },
+  enforce: 'post',
+} : {};
 
 module.exports = (config) => ({
   // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -56,19 +68,12 @@ module.exports = (config) => ({
       ...webpackConfig.module,
       rules: [
         ...webpackConfig.module.rules,
-        {
-          // Instrument sourcemaps for code coverage
-          test: /\.(js)?$/,
-          include: [src],
-          use: {
-            loader: 'istanbul-instrumenter-loader',
-            options: { esModules: true },
-          },
-          enforce: 'post',
-        },
+        istanbul,
       ],
     },
   },
+
+  browserNoActivityTimeout: 1000 * 300, // 300 seconds
 
   plugins: [
     'karma-tap',
