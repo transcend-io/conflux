@@ -9,7 +9,6 @@ async function isSmiley(entry) {
 }
 
 // All test are orderd by filename
-
 test('all_appended_bytes.zip', async (t) => {
   const it = Reader(fixtures['all_appended_bytes.zip']);
 

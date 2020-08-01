@@ -12,4 +12,3 @@ Blob.prototype.text = function text() {
 
 require('./read.test.js');
 require('./write.test.js');
-require('../test/fixture.test.js');
