@@ -10,10 +10,12 @@ module.exports = {
     ],
   ],
   plugins: [
-    ['@babel/plugin-transform-runtime',
+    [
+      '@babel/plugin-transform-runtime',
       {
         regenerator: true,
       },
     ],
+    ['@babel/plugin-transform-classes'],
   ],
 };
