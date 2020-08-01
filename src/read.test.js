@@ -1,6 +1,6 @@
 import test from 'tape';
 import { Reader } from './index.js';
-import fixtures from '../test/fixture/fixture.test.js';
+import fixtures from '../test/fixture.test.js';
 
 async function isSmiley(entry) {
   const a1 = Buffer.from(await entry.arrayBuffer());

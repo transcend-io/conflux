@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 /* eslint-disable no-restricted-syntax */
-import 'regenerator-runtime/runtime.js';
 import { Reader } from '../../src/index.js';
 
 const jszip = 'https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/';

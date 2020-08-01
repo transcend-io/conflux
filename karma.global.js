@@ -73,8 +73,6 @@ module.exports = (config) => ({
     },
   },
 
-  browserNoActivityTimeout: 1000 * 300, // 300 seconds
-
   plugins: [
     'karma-tap',
     'karma-coverage',

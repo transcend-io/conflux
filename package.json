@@ -9,7 +9,7 @@
     "test:local:rebuild": "yarn && karma start karma.local.js",
     "test:browserstack": "karma start karma.browserstack.js",
     "report-coverage": "codecov",
-    "rebuild-fixtures": "node test/fixture/build.js",
+    "rebuild-fixtures": "node test/build.js",
     "####### Build #######": "",
     "clean": "rimraf build && rimraf coverage",
     "build": "yarn clean && mkdir -p build && webpack && yarn build:cp-examples && yarn build:markdown",
@@ -63,6 +63,7 @@
   "homepage": "https://github.com/transcend-io/conflux#readme",
   "devDependencies": {
     "@babel/core": "^7.8.6",
+    "@babel/plugin-transform-runtime": "^7.11.0",
     "@babel/preset-env": "^7.8.6",
     "babel-loader": "^8.0.6",
     "codecov": "^3.6.5",
@@ -89,6 +90,7 @@
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
+    "@babel/runtime": "^7.11.0",
     "pako": "^1.0.11",
     "web-streams-polyfill": "^2.1.0"
   }

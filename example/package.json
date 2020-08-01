@@ -9,7 +9,6 @@
   "author": "Transcend Inc.",
   "license": "MIT",
   "dependencies": {
-    "regenerator-runtime": "^0.13.5",
     "streamsaver": "^2.0.3"
   }
 }

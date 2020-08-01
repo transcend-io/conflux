@@ -1,4 +1,3 @@
-import 'regenerator-runtime/runtime.js';
 import { Writer } from '../../src/index.js';
 
 const { readable, writable } = new Writer();

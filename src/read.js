@@ -264,6 +264,7 @@ async function* Reader(file) {
   // Seek EOCDR - "End of central directory record" is the last part of a zip archive, and is at least 22 bytes long.
   // Zip file comment is the last part of EOCDR and has max length of 64KB,
   // so we only have to search the last 64K + 22 bytes of a archive for EOCDR signature (0x06054b50).
+  console.log('size', file.size, EOCDR_MIN)
   if (file.size < EOCDR_MIN) throw new Error(ERR_BAD_FORMAT);
 
   // seek last length bytes of file for EOCDR
