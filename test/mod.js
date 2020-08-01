@@ -12,7 +12,7 @@ const mod = () =>
       }
 
       if (val.$d) {
-        return new Blob(b64.decode(val.$d));
+        return new Blob([b64.decode(val.$d)]);
       }
 
       return val;
