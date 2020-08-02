@@ -1,8 +1,6 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
-// import json from '@rollup/plugin-json';
-// import nodePolyfills from 'rollup-plugin-node-polyfills';
 import pkg from './package.json';
 
 export default [
@@ -63,30 +61,4 @@ export default [
       }),
     ],
   },
-
-  // // Test
-  // {
-  //   input: 'test/index.test.js',
-  //   output: [
-  //     {
-  //       format: 'iife', // Helps prevent naming collisions.
-  //       name: 'confluxTest', // Required for 'iife' format.
-  //       // sourcemap: 'inline', // Sensible for testing.
-  //       file: 'dist/test.js',
-  //     },
-  //   ],
-  //   plugins: [
-  //     resolve({
-  //       preferBuiltins: true,
-  //     }),
-  //     commonjs(),
-  //     json(),
-  //     nodePolyfills(),
-  //     babel({
-  //       exclude: ['node_modules/**'],
-  //       // see: https://github.com/rollup/plugins/tree/master/packages/babel#babelhelpers and the note about @babel/runtime for CJS/ES
-  //       configFile: './babel.config.js',
-  //     }),
-  //   ],
-  // },
 ];

@@ -5,12 +5,6 @@ const resolve = require('@rollup/plugin-node-resolve').default;
 const nodePolyfills = require('rollup-plugin-node-polyfills');
 const commonjs = require('@rollup/plugin-commonjs');
 
-// const { join } = require('path');
-// const webpackConfig = require('./webpack.config.js');
-
-// const { CI } = process.env;
-// const src = join(__dirname, 'src');
-
 module.exports = (config) => ({
   // base path that will be used to resolve all patterns (eg. files, exclude)
   basePath: '',
