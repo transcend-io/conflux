@@ -1,5 +1,5 @@
 import test from 'tape';
-import { Writer, Reader } from './index.js';
+import { Writer, Reader } from '../src/index.js';
 
 function streamFrom(chunks) {
   return new ReadableStream({

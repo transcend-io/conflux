@@ -262,8 +262,9 @@ const mod = () =>
   );
 
 // Exports for both ESM and CJS. This is imported by both the browser during Karma tests for fixture loading, and Node during fixture generation.
-Object.defineProperty(exports, '__esModule', {
-  value: true,
-});
+// Object.defineProperty(exports, '__esModule', {
+//   value: true,
+// });
 
-exports.default = mod;
+// exports.default = mod;
+export default mod; // TODO: address the Node import issue
