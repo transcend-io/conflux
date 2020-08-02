@@ -33,7 +33,12 @@ module.exports = (config) => ({
   frameworks: ['tap'],
 
   // list of files / patterns to load in the browser
-  files: [{ pattern: 'test/**/*.test.js', watched: false }],
+  files: [
+    {
+      pattern: 'test/index.test.js',
+      watched: false,
+    },
+  ],
 
   // list of files / patterns to exclude
   exclude: [],
@@ -41,7 +46,7 @@ module.exports = (config) => ({
   // preprocess matching files before serving them to the browser
   // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
   preprocessors: {
-    'test/**/*.test.js': ['rollup'], // TODO: re-enable sourcemap?
+    'test/index.test.js': ['rollup'], // TODO: re-enable sourcemap?
   },
 
   // see: https://github.com/jlmakes/karma-rollup-preprocessor
@@ -96,11 +101,11 @@ module.exports = (config) => ({
   logLevel: config.LOG_INFO,
 
   // enable / disable watching file and executing tests whenever any file changes
-  autoWatch: true, // TODO: invert bool
+  autoWatch: false,
 
   // Continuous Integration mode
   // if true, Karma captures browsers, runs the tests and exits
-  // singleRun: true, // TODO: uncomment
+  singleRun: true,
 
   // Concurrency level
   // how many browser should be started simultaneous
