@@ -1,33 +1,46 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
+import { terser } from 'rollup-plugin-terser';
 import pkg from './package.json';
+
+const babelConfig = () =>
+  babel({
+    exclude: ['node_modules/**'],
+    // see: https://github.com/rollup/plugins/tree/master/packages/babel#babelhelpers and the note about @babel/runtime for CJS/ES
+    babelHelpers: 'runtime',
+    configFile: './babel.config.js',
+    plugins: [
+      [
+        '@babel/plugin-transform-runtime',
+        {
+          regenerator: true,
+        },
+      ],
+    ],
+  });
 
 export default [
   // browser-friendly UMD build
   {
     input: 'src/index.js',
-    output: {
-      name: 'conflux',
-      file: pkg.browser,
-      format: 'umd',
-    },
+    output: [
+      {
+        name: 'conflux',
+        file: pkg.browser,
+        format: 'umd',
+      },
+      {
+        name: 'conflux.min',
+        file: pkg.unpkg,
+        format: 'umd',
+        plugins: [terser()],
+      },
+    ],
     plugins: [
       resolve(), // so Rollup can find package dependencies
       commonjs(), // so Rollup can convert package dependencies to an ES module
-      babel({
-        exclude: ['node_modules/**'],
-        babelHelpers: 'runtime',
-        configFile: './babel.config.js',
-        plugins: [
-          [
-            '@babel/plugin-transform-runtime',
-            {
-              regenerator: true,
-            },
-          ],
-        ],
-      }),
+      babelConfig(),
     ],
   },
 
@@ -44,21 +57,6 @@ export default [
       { file: pkg.main, format: 'cjs' },
       { file: pkg.module, format: 'es' },
     ],
-    plugins: [
-      babel({
-        exclude: ['node_modules/**'],
-        // see: https://github.com/rollup/plugins/tree/master/packages/babel#babelhelpers and the note about @babel/runtime for CJS/ES
-        babelHelpers: 'runtime',
-        configFile: './babel.config.js',
-        plugins: [
-          [
-            '@babel/plugin-transform-runtime',
-            {
-              regenerator: true,
-            },
-          ],
-        ],
-      }),
-    ],
+    plugins: [babelConfig()],
   },
 ];
