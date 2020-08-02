@@ -11,19 +11,6 @@ const commonjs = require('@rollup/plugin-commonjs');
 // const { CI } = process.env;
 // const src = join(__dirname, 'src');
 
-// const istanbul = CI
-//   ? {
-//       // Instrument sourcemaps for code coverage on CI
-//       test: /\.(js)?$/,
-//       include: [src],
-//       use: {
-//         loader: 'istanbul-instrumenter-loader',
-//         options: { esModules: true },
-//       },
-//       enforce: 'post',
-//     }
-//   : {};
-
 module.exports = (config) => ({
   // base path that will be used to resolve all patterns (eg. files, exclude)
   basePath: '',
@@ -55,7 +42,7 @@ module.exports = (config) => ({
       {
         format: 'iife', // Helps prevent naming collisions.
         name: 'confluxTest', // Required for 'iife' format.
-        sourcemap: 'inline', // Sensible for testing.
+        sourcemap: true, // Sensible for testing.
         file: 'dist/test2.js',
       },
     ],
@@ -79,16 +66,16 @@ module.exports = (config) => ({
   plugins: [
     'karma-rollup-preprocessor',
     'karma-tap',
-    // 'karma-coverage',
-    // 'karma-webpack',
-    // 'karma-sourcemap-loader',
+    'karma-coverage',
+    'karma-webpack',
+    'karma-sourcemap-loader',
   ],
 
-  // reporters: ['progress', 'coverage'], // TODO: re-enable reporters
+  reporters: ['progress', 'coverage'],
 
-  // coverageReporter: {
-  //   reporters: [{ type: 'lcov' }],
-  // },
+  coverageReporter: {
+    reporters: [{ type: 'lcov' }],
+  },
 
   // web server port
   port: 9877,
