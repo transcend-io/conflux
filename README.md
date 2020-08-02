@@ -23,10 +23,14 @@
 - 21.6 kB import
 - Uses streams, minimizing memory overhead
 
-## Examples
+## Compatibility
 
-- [Zip large remote files together using streams](https://conflux.netlify.com/example/pipes2).
-- [Read the files inside a Zip using streams](https://conflux.netlify.com/example/reading)
+|         |          |
+| ------- | -------: |
+| Chrome  |       ✅ |
+| Safari  |       ✅ |
+| Edge    |       ✅ |
+| Firefox |       ✅ |
 
 ## Usage
 
