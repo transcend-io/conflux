@@ -15,9 +15,7 @@
     "report-coverage": "codecov",
     "rebuild-fixtures": "node test/build.js",
     "####### Build #######": "",
-    "build": "yarn clean && yarn rollup && yarn build:markdown",
-    "rollup": "rollup -c",
-    "clean": "rimraf dist && rimraf coverage",
+    "build": "rollup -c",
     "build:markdown": "markdown-toc -i --bullets '—' README.md && sed -i -e 's/—/-/g' README.md && rm -f README.md-e"
   },
   "repository": {
