@@ -7,11 +7,10 @@
  * @license MIT
  */
 // eslint-disable-next-line import/extensions
-import { TransformStream as PollyTransform } from 'web-streams-polyfill/ponyfill';
+import { TransformStream } from 'web-streams-polyfill/ponyfill';
 import Crc32 from './crc.js';
 
 const encoder = new TextEncoder();
-const BigInt = globalThis.BigInt || globalThis.Number
 
 class ZipTransformer {
   constructor() {
@@ -151,12 +150,8 @@ class ZipTransformer {
   }
 }
 
-const ts = globalThis.TransformStream ||
-           globalThis.WebStreamsPolyfill?.TransformStream ||
-           PollyTransform
-
 // eslint-disable-next-line no-undef
-class Writer extends ts {
+class Writer extends TransformStream {
   constructor() {
     super(new ZipTransformer());
   }
