@@ -57,13 +57,7 @@ module.exports = (config) => ({
 
   // browserNoActivityTimeout: 60000,
 
-  plugins: [
-    'karma-rollup-preprocessor',
-    'karma-tap',
-    'karma-coverage',
-    'karma-webpack',
-    'karma-sourcemap-loader',
-  ],
+  plugins: ['karma-rollup-preprocessor', 'karma-tap', 'karma-coverage'],
 
   reporters: ['progress', 'coverage'],
 
