@@ -20,7 +20,7 @@
 
 ## Blazing Fast
 
-- 21.6 kB import
+- 100 kB import
 - Uses streams, minimizing memory overhead
 
 ## Compatibility
