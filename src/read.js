@@ -1,3 +1,4 @@
+/* global globalThis */
 /* eslint-disable no-underscore-dangle */
 /**
  * Conflux
@@ -7,26 +8,10 @@
  * @license MIT
  */
 // eslint-disable-next-line import/extensions
-import { TransformStream } from 'web-streams-polyfill/ponyfill';
-import Inflate from 'pako';
+import { Inflate } from 'pako';
 import Crc32 from './crc.js';
 
-class Inflator {
-  async start(ctrl) {
-    this.inflator = new Inflate({ raw: true });
-    this.inflator.onData = (chunk) => ctrl.enqueue(chunk);
-    this.done = new Promise((rs) => (this.inflator.onEnd = rs));
-  }
-
-  transform(chunk) {
-    this.inflator.push(chunk);
-  }
-
-  flush() {
-    return this.done;
-  }
-}
-
+const BigInt = globalThis.BigInt || globalThis.Number;
 const ERR_BAD_FORMAT = 'File format is not recognized.';
 const ZIP_COMMENT_MAX = 65536;
 const EOCDR_MIN = 22;
@@ -136,15 +121,15 @@ class Entry {
     const t = this.dataView.getUint32(12, true);
 
     return new Date(
-      Date.UTC(
-        ((t >> 25) & 0x7f) + 1980, // year
-        ((t >> 21) & 0x0f) - 1, // month
-        (t >> 16) & 0x1f, // day
-        (t >> 11) & 0x1f, // hour
-        (t >> 5) & 0x3f, // minute
-        (t & 0x1f) << 1,
-      ),
-    ); // second
+      // Date.UTC(
+      ((t >> 25) & 0x7f) + 1980, // year
+      ((t >> 21) & 0x0f) - 1, // month
+      (t >> 16) & 0x1f, // day
+      (t >> 11) & 0x1f, // hour
+      (t >> 5) & 0x3f, // minute
+      (t & 0x1f) << 1,
+      // ),
+    );
   }
 
   get lastModified() {
@@ -152,8 +137,8 @@ class Entry {
   }
 
   get name() {
-    if (!this.bitFlag && this.extraFields && this.extraFields[0x7075]) {
-      return decoder.decode(this.extraFields[0x7075].buffer.slice(5));
+    if (!this.bitFlag && this._extraFields && this._extraFields[0x7075]) {
+      return decoder.decode(this._extraFields[0x7075].buffer.slice(5));
     }
 
     const dv = this.dataView;
@@ -167,46 +152,53 @@ class Entry {
 
   get size() {
     const size = this.dataView.getUint32(24, true);
-    return size === MAX_VALUE_32BITS ? this.extraFields[1].getUint8(0) : size;
+    return size === MAX_VALUE_32BITS ? this._extraFields[1].getUint8(0) : size;
   }
 
   stream() {
-    const { readable, writable } = new TransformStream();
-    // Need to read local header to get fileName + extraField length
-    // Since they are not always the same length as in central dir...
-    this._fileLike
-      .slice(this.offset + 26, this.offset + 30)
-      .arrayBuffer()
-      .then((ab) => {
-        const crc = new Crc32();
+    const self = this;
+    const crc = new Crc32();
+    let inflator;
+    const onEnd = (ctrl) =>
+      crc.get() === self.crc32
+        ? ctrl.close()
+        : ctrl.error(new Error("The crc32 checksum don't match"));
+
+    return new ReadableStream({
+      async start(ctrl) {
+        // Need to read local header to get fileName + extraField length
+        // Since they are not always the same length as in central dir...
+        const ab = await self._fileLike
+          .slice(self.offset + 26, self.offset + 30)
+          .arrayBuffer();
+
         const bytes = new Uint8Array(ab);
         const localFileOffset = uint16e(bytes, 0) + uint16e(bytes, 2) + 30;
-        const start = this.offset + localFileOffset;
-        const end = start + this.compressedSize;
-        let stream = this._fileLike.slice(start, end).stream();
+        const start = self.offset + localFileOffset;
+        const end = start + self.compressedSize;
+        this.reader = self._fileLike
+          .slice(start, end)
+          .stream()
+          .getReader();
 
-        if (this.compressionMethod) {
-          stream = stream.pipeThrough(new TransformStream(new Inflator()));
+        if (self.compressionMethod) {
+          inflator = new Inflate({ raw: true });
+          inflator.onData = (chunk) => {
+            crc.append(chunk);
+            ctrl.enqueue(chunk);
+          };
+          inflator.onEnd = () => onEnd(ctrl);
         }
-
-        stream = stream.pipeThrough(
-          new TransformStream({
-            transform(chunk, ctrl) {
-              crc.append(chunk);
-              ctrl.enqueue(chunk);
-            },
-            flush: (ctrl) => {
-              if (crc.get() !== this.crc32) {
-                ctrl.error(new Error("The crc32 checksum don't match"));
-              }
-            },
-          }),
-        );
-
-        stream.pipeTo(writable);
-      });
-
-    return readable;
+      },
+      async pull(ctrl) {
+        const v = await this.reader.read();
+        inflator
+          ? !v.done && inflator.push(v.value)
+          : v.done
+          ? onEnd(ctrl)
+          : (ctrl.enqueue(v.value), crc.append(v.value));
+      },
+    });
   }
 
   arrayBuffer() {
@@ -232,6 +224,40 @@ class Entry {
         throw new Error(`Failed to read Entry\n${e}`);
       });
   }
+}
+
+function getBigInt64(view, position, littleEndian = false) {
+  if ('getBigInt64' in DataView.prototype) {
+    return view.getBigInt64(position, littleEndian);
+  }
+
+  let value = BigInt(0);
+  const isNegative =
+    (view.getUint8(position + (littleEndian ? 7 : 0)) & 0x80) > 0;
+  let carrying = true;
+
+  for (let i = 0; i < 8; i++) {
+    let byte = view.getUint8(position + (littleEndian ? i : 7 - i));
+
+    if (isNegative) {
+      if (carrying) {
+        if (byte != 0x00) {
+          byte = ~(byte - 1) & 0xff;
+          carrying = false;
+        }
+      } else {
+        byte = ~byte & 0xff;
+      }
+    }
+
+    value += BigInt(byte) * Math.pow(BigInt(256), BigInt(i));
+  }
+
+  if (isNegative) {
+    value = -value;
+  }
+
+  return value;
 }
 
 async function* Reader(file) {
@@ -277,7 +303,7 @@ async function* Reader(file) {
 
     // const signature = dv.getUint32(0, true) // 4 bytes
     // const diskWithZip64CentralDirStart = dv.getUint32(4, true) // 4 bytes
-    const relativeOffsetEndOfZip64CentralDir = Number(dv.getBigInt64(8, true)); // 8 bytes
+    const relativeOffsetEndOfZip64CentralDir = Number(getBigInt64(dv, 8, true)); // 8 bytes
     // const numberOfDisks = dv.getUint32(16, true) // 4 bytes
 
     const zip64centralBlob = file.slice(relativeOffsetEndOfZip64CentralDir, l);
@@ -286,9 +312,9 @@ async function* Reader(file) {
     // const diskNumber = dv.getUint32(16, true)
     // const diskWithCentralDirStart = dv.getUint32(20, true)
     // const centralDirRecordsOnThisDisk = dv.getBigInt64(24, true)
-    fileslength = Number(dv.getBigInt64(32, true));
-    centralDirSize = Number(dv.getBigInt64(40, true));
-    centralDirOffset = Number(dv.getBigInt64(48, true));
+    fileslength = Number(getBigInt64(dv, 32, true));
+    centralDirSize = Number(getBigInt64(dv, 40, true));
+    centralDirOffset = Number(getBigInt64(dv, 48, true));
   }
 
   if (centralDirOffset < 0 || centralDirOffset >= file.size) {
@@ -299,6 +325,7 @@ async function* Reader(file) {
   const end = centralDirOffset + centralDirSize;
   const blob = file.slice(start, end);
   const bytes = new Uint8Array(await blob.arrayBuffer());
+
   for (let i = 0, index = 0; i < fileslength; i++) {
     const size =
       uint16e(bytes, index + 28) + // filenameLength

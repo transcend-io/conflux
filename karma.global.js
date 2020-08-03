@@ -1,7 +1,9 @@
-const { join } = require('path');
-const webpackConfig = require('./webpack.config.js');
-
-const src = join(__dirname, 'src');
+/* eslint-disable import/no-extraneous-dependencies */
+const babel = require('@rollup/plugin-babel').default;
+const json = require('@rollup/plugin-json');
+const resolve = require('@rollup/plugin-node-resolve').default;
+const nodePolyfills = require('rollup-plugin-node-polyfills');
+const commonjs = require('@rollup/plugin-commonjs');
 
 module.exports = (config) => ({
   // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -14,28 +16,8 @@ module.exports = (config) => ({
   // list of files / patterns to load in the browser
   files: [
     {
-      pattern: 'src/read.js',
-      included: true,
-      served: true,
-      nocache: false,
-    },
-    {
-      pattern: 'src/write.js',
-      included: true,
-      served: true,
-      nocache: false,
-    },
-    {
-      pattern: 'src/crc.js',
-      included: false,
-      served: true,
-      nocache: false,
-    },
-    {
-      pattern: 'src/index.test.js',
-      included: true,
-      served: true,
-      nocache: false,
+      pattern: 'test/index.test.js',
+      watched: false,
     },
   ],
 
@@ -45,37 +27,37 @@ module.exports = (config) => ({
   // preprocess matching files before serving them to the browser
   // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
   preprocessors: {
-    'src/**': ['webpack', 'sourcemap'],
+    'test/index.test.js': ['rollup'], // TODO: re-enable sourcemap?
   },
 
-  // webpack configuration
-  webpack: {
-    // eslint-disable-next-line global-require
-    ...webpackConfig,
-    module: {
-      ...webpackConfig.module,
-      rules: [
-        ...webpackConfig.module.rules,
-        {
-          // Instrument sourcemaps for code coverage
-          test: /\.(js)?$/,
-          include: [src],
-          use: {
-            loader: 'istanbul-instrumenter-loader',
-            options: { esModules: true },
-          },
-          enforce: 'post',
-        },
-      ],
-    },
+  // see: https://github.com/jlmakes/karma-rollup-preprocessor
+  rollupPreprocessor: {
+    output: [
+      {
+        format: 'iife', // Helps prevent naming collisions.
+        name: 'confluxTest', // Required for 'iife' format.
+        sourcemap: true, // Sensible for testing.
+        file: 'dist/test2.js',
+      },
+    ],
+    plugins: [
+      resolve({
+        preferBuiltins: true,
+      }),
+      commonjs(),
+      json(),
+      nodePolyfills(),
+      babel({
+        exclude: ['node_modules/**'],
+        // see: https://github.com/rollup/plugins/tree/master/packages/babel#babelhelpers and the note about @babel/runtime for CJS/ES
+        configFile: './babel.config.js',
+      }),
+    ],
   },
 
-  plugins: [
-    'karma-tap',
-    'karma-coverage',
-    'karma-webpack',
-    'karma-sourcemap-loader',
-  ],
+  // browserNoActivityTimeout: 60000,
+
+  plugins: ['karma-rollup-preprocessor', 'karma-tap', 'karma-coverage'],
 
   reporters: ['progress', 'coverage'],
 

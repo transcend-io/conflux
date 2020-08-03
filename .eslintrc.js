@@ -7,6 +7,7 @@ module.exports = {
     'prettier',
     'plugin:prettier/recommended',
   ],
+  plugins: ["@babel"],
   rules: {
     "no-bitwise": "off",
     "max-len": ["error", 125, { "comments": 200 }],

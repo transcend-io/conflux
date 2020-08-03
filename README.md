@@ -13,25 +13,35 @@
   <a href="https://snyk.io//test/github/transcend-io/conflux?targetFile=package.json"><img src="https://snyk.io//test/github/transcend-io/conflux/badge.svg?targetFile=package.json" alt="Known Vulnerabilities"></a>
 <a href="https://app.fossa.io/projects/git%2Bgithub.com%2Ftranscend-io%2Fconflux?ref=badge_shield" alt="FOSSA Status"><img src="https://app.fossa.io/api/projects/git%2Bgithub.com%2Ftranscend-io%2Fconflux.svg?type=shield"/></a>
   <a href="https://codecov.io/gh/transcend-io/conflux"><img src="https://codecov.io/gh/transcend-io/conflux/branch/master/graph/badge.svg" alt="Code Coverage"></a>
-  <a href="https://codeclimate.com/github/transcend-io/conflux/maintainability"><img src="https://api.codeclimate.com/v1/badges/ec9cfcc2963755b30c0d/maintainability" /></a>
-  <a href="https://app.netlify.com/sites/conflux/deploys"><img src="https://api.netlify.com/api/v1/badges/8315091c-798e-4a3e-bdf9-2fd21c7a025e/deploy-status" alt="Netlify Status"></a>
+  <!-- <a href="https://codeclimate.com/github/transcend-io/conflux/maintainability"><img src="https://api.codeclimate.com/v1/badges/ec9cfcc2963755b30c0d/maintainability" /></a> -->
   <br /><br />
 </p>
 <br />
 
 ## Blazing Fast
 
-- 21.6 kB import
+- ~100 kB import
 - Uses streams, minimizing memory overhead
+
+## Compatibility
+
+|         |          |
+| ------- | -------: |
+| Chrome  |       ✅ |
+| Safari  |       ✅ |
+| Edge    |       ✅ |
+| Firefox |       ✅ |
 
 ## Examples
 
-- [Zip large remote files together using streams](https://conflux.netlify.com/example/pipes2).
-- [Read the files inside a Zip using streams](https://conflux.netlify.com/example/reading)
+- [Writing zips](https://codesandbox.io/s/transcend-ioconflux-writing-x8vq4?file=/src/index.js)
+- [Reading zips](https://codesandbox.io/s/transcend-ioconflux-reading-rzl9l?file=/src/index.js)
 
 ## Usage
 
 ### Importing Conflux
+
+#### Package Manager
 
 ```sh
 # With Yarn
@@ -42,19 +52,28 @@ npm install --save @transcend-io/conflux
 ```
 
 ```js
-import Zip from "@transcend-io/conflux/write";
+import { Reader, Writer } from '@transcend-io/conflux';
+```
 
-const { readable, writable } = new Zip();
+#### CDN
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@transcend-io/conflux@3"></script>
+```
+
+```js
+const { Reader, Writer } = window.conflux;
 ```
 
 ### Writing a ZIP
 
 ```js
-import Zip from "@transcend-io/conflux/write";
+import { Writer } from '@transcend-io/conflux';
+
 import streamSaver from "streamsaver";
 
 // Set up conflux
-const { readable, writable } = new Zip();
+const { readable, writable } = new Writer();
 const writer = writable.getWriter();
 
 // Set up streamsaver
@@ -75,6 +94,12 @@ writer.close();
 ### Incorporating other streams
 
 ```js
+import { Writer } from '@transcend-io/conflux';
+
+const { readable, writable } = new Writer();
+const writer = writable.getWriter();
+const reader = readable.getReader();
+
 (async () => {
   writer.write({
     name: "/cat.txt",
@@ -101,12 +126,12 @@ writer.close();
 ### Reading ZIP files
 
 ```js
-import reader from "@transcend-io/conflux/read";
+import { Reader } from '@transcend-io/conflux';
 
 fetch("https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/deflate.zip").then(
   async res => {
     const zip = await res.blob();
-    for await (const entry of reader(zip)) {
+    for await (const entry of Reader(zip)) {
       console.log(entry);
     }
   }

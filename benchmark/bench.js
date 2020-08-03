@@ -1,6 +1,12 @@
-import Conflux from '../src/write.js';
-
-const { WritableStream, Response, Benchmark, Blob, JSZip, zip } = window;
+const {
+  WritableStream,
+  Response,
+  Benchmark,
+  Blob,
+  JSZip,
+  zip,
+  conflux,
+} = window;
 
 zip.useWebWorkers = false;
 
@@ -79,7 +85,7 @@ suite
   .add('Conflux - Response to blob', {
     defer: true,
     fn(p) {
-      const { writable, readable } = new Conflux();
+      const { writable, readable } = new conflux.Writer();
       const writer = writable.getWriter();
       const res = new Response(readable, {
         headers: { 'content-type': 'application/zip' },
@@ -93,7 +99,7 @@ suite
   .add('Conflux - pipeTo Writable Blob builder', {
     defer: true,
     fn(p) {
-      const { writable, readable } = new Conflux();
+      const { writable, readable } = new conflux.Writer();
       const writer = writable.getWriter();
       const chunks = [];
       const ws = new WritableStream({
@@ -114,7 +120,7 @@ suite
   .add('Conflux - pipeTo noop Writable', {
     defer: true,
     fn(p) {
-      const { writable, readable } = new Conflux();
+      const { writable, readable } = new conflux.Writer();
       const writer = writable.getWriter();
       const ws = new WritableStream({
         write() {},
