@@ -1,20 +1,21 @@
 import _regeneratorRuntime from '@babel/runtime-corejs3/regenerator';
 import _asyncToGenerator from '@babel/runtime-corejs3/helpers/asyncToGenerator';
-import _sliceInstanceProperty from '@babel/runtime-corejs3/core-js-stable/instance/slice';
+import _sliceInstanceProperty from '@babel/runtime-corejs3/core-js/instance/slice';
 import _classCallCheck from '@babel/runtime-corejs3/helpers/classCallCheck';
 import _createClass from '@babel/runtime-corejs3/helpers/createClass';
+import _globalThis from '@babel/runtime-corejs3/core-js/global-this';
 import _awaitAsyncGenerator from '@babel/runtime-corejs3/helpers/awaitAsyncGenerator';
 import _wrapAsyncGenerator from '@babel/runtime-corejs3/helpers/wrapAsyncGenerator';
 import { Inflate } from 'pako';
-import _Reflect$construct from '@babel/runtime-corejs3/core-js-stable/reflect/construct';
+import _Reflect$construct from '@babel/runtime-corejs3/core-js/reflect/construct';
 import _inherits from '@babel/runtime-corejs3/helpers/inherits';
 import _possibleConstructorReturn from '@babel/runtime-corejs3/helpers/possibleConstructorReturn';
 import _getPrototypeOf from '@babel/runtime-corejs3/helpers/getPrototypeOf';
-import _forEachInstanceProperty from '@babel/runtime-corejs3/core-js-stable/instance/for-each';
-import _endsWithInstanceProperty from '@babel/runtime-corejs3/core-js-stable/instance/ends-with';
-import _Date$now from '@babel/runtime-corejs3/core-js-stable/date/now';
-import _trimInstanceProperty from '@babel/runtime-corejs3/core-js-stable/instance/trim';
-import _Object$create from '@babel/runtime-corejs3/core-js-stable/object/create';
+import _forEachInstanceProperty from '@babel/runtime-corejs3/core-js/instance/for-each';
+import _endsWithInstanceProperty from '@babel/runtime-corejs3/core-js/instance/ends-with';
+import _Date$now from '@babel/runtime-corejs3/core-js/date/now';
+import _trimInstanceProperty from '@babel/runtime-corejs3/core-js/instance/trim';
+import _Object$create from '@babel/runtime-corejs3/core-js/object/create';
 import { TransformStream } from 'web-streams-polyfill/ponyfill';
 
 var Crc32 = /*#__PURE__*/function () {
@@ -60,7 +61,7 @@ Crc32.prototype.table = function (table, i, j, t) {
   return table;
 }([], 0, 0, 0);
 
-var BigInt = globalThis.BigInt || globalThis.Number;
+var BigInt = _globalThis.BigInt || _globalThis.Number;
 var ERR_BAD_FORMAT = 'File format is not recognized.';
 var ZIP_COMMENT_MAX = 65536;
 var EOCDR_MIN = 22;
@@ -576,7 +577,7 @@ function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflec
 
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !_Reflect$construct) return false; if (_Reflect$construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(_Reflect$construct(Date, [], function () {})); return true; } catch (e) { return false; } }
 var encoder = new TextEncoder();
-var BigInt$1 = globalThis.BigInt || globalThis.Number;
+var BigInt$1 = _globalThis.BigInt || _globalThis.Number;
 
 var ZipTransformer = /*#__PURE__*/function () {
   function ZipTransformer() {
@@ -746,7 +747,7 @@ var ZipTransformer = /*#__PURE__*/function () {
   return ZipTransformer;
 }();
 
-var ts = globalThis.TransformStream || ((_globalThis$WebStream = globalThis.WebStreamsPolyfill) === null || _globalThis$WebStream === void 0 ? void 0 : _globalThis$WebStream.TransformStream) || TransformStream;
+var ts = _globalThis.TransformStream || ((_globalThis$WebStream = _globalThis.WebStreamsPolyfill) === null || _globalThis$WebStream === void 0 ? void 0 : _globalThis$WebStream.TransformStream) || TransformStream;
 
 var Writer = /*#__PURE__*/function (_ts) {
   _inherits(Writer, _ts);

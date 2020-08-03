@@ -13,7 +13,7 @@ const babelDefaults = {
       '@babel/plugin-transform-runtime',
       {
         regenerator: true,
-        corejs: 3,
+        corejs: { version: 3, proposals: true },
       },
     ],
   ],
