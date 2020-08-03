@@ -20,7 +20,7 @@
 
 ## Blazing Fast
 
-- 100 kB import
+- ~100 kB import
 - Uses streams, minimizing memory overhead
 
 ## Compatibility
@@ -31,6 +31,11 @@
 | Safari  |       ✅ |
 | Edge    |       ✅ |
 | Firefox |       ✅ |
+
+## Examples
+
+- [Writing zips](https://codesandbox.io/s/transcend-ioconflux-writing-x8vq4?file=/src/index.js)
+- [Reading zips](https://codesandbox.io/s/transcend-ioconflux-reading-rzl9l?file=/src/index.js)
 
 ## Usage
 

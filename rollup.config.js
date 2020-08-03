@@ -4,22 +4,6 @@ import babel from '@rollup/plugin-babel';
 import { terser } from 'rollup-plugin-terser';
 import pkg from './package.json';
 
-const babelConfig = () =>
-  babel({
-    exclude: ['node_modules/**'],
-    // see: https://github.com/rollup/plugins/tree/master/packages/babel#babelhelpers and the note about @babel/runtime for CJS/ES
-    babelHelpers: 'runtime',
-    configFile: './babel.config.js',
-    plugins: [
-      [
-        '@babel/plugin-transform-runtime',
-        {
-          regenerator: true,
-        },
-      ],
-    ],
-  });
-
 export default [
   // browser-friendly UMD build
   {
@@ -27,20 +11,27 @@ export default [
     output: [
       {
         name: 'conflux',
-        file: pkg.browser,
-        format: 'umd',
-      },
-      {
-        name: 'conflux.min',
         file: pkg.unpkg,
         format: 'umd',
-        plugins: [terser()],
       },
     ],
     plugins: [
       resolve(), // so Rollup can find package dependencies
       commonjs(), // so Rollup can convert package dependencies to an ES module
-      babelConfig(),
+      babel({
+        // see: https://github.com/rollup/plugins/tree/master/packages/babel#babelhelpers and the note about @babel/runtime for CJS/ES
+        babelHelpers: 'runtime',
+        configFile: './babel.config.js',
+        plugins: [
+          [
+            '@babel/plugin-transform-runtime',
+            {
+              regenerator: true,
+            },
+          ],
+        ],
+      }),
+      terser(),
     ],
   },
 
@@ -54,9 +45,24 @@ export default [
     input: 'src/index.js',
     external: [/pako/, /web-streams-polyfill/, /@babel\/runtime/],
     output: [
-      { file: pkg.main, format: 'cjs' },
-      { file: pkg.module, format: 'es' },
+      // { file: pkg.main, format: 'cjs' }, // don't need a Node import yet
+      { file: pkg.main, format: 'es' },
     ],
-    plugins: [babelConfig()],
+    plugins: [
+      babel({
+        exclude: ['node_modules/**'],
+        // see: https://github.com/rollup/plugins/tree/master/packages/babel#babelhelpers and the note about @babel/runtime for CJS/ES
+        babelHelpers: 'runtime',
+        configFile: './babel.config.js',
+        plugins: [
+          [
+            '@babel/plugin-transform-runtime',
+            {
+              regenerator: true,
+            },
+          ],
+        ],
+      }),
+    ],
   },
 ];
