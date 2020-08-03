@@ -9,7 +9,7 @@
   (<i>noun</i>)<span> a flowing together of two or more streams</span><br /><br />
   <br /><br />
   <a href="https://travis-ci.com/transcend-io/conflux"><img src="https://travis-ci.com/transcend-io/conflux.svg?branch=master" alt="Build Status"></a>
-  <a href="https://automate.browserstack.com/public-build/NFlXc0MvaDRGQXVzSTNyY0lMbCtWM2RyekZsazZIaGRlQjl3cUxvQzFGTT0tLUkreEdTNUp1WGZvbkVVTUx3L1V1S1E9PQ==--3a59d2846f42b6c70d7873868ea6798a093f76e8%"><img src='https://automate.browserstack.com/badge.svg?badge_key=NFlXc0MvaDRGQXVzSTNyY0lMbCtWM2RyekZsazZIaGRlQjl3cUxvQzFGTT0tLUkreEdTNUp1WGZvbkVVTUx3L1V1S1E9PQ==--3a59d2846f42b6c70d7873868ea6798a093f76e8%'/></a>
+  <a href="https://automate.browserstack.com/public-build/NFlXc0MvaDRGQXVzSTNyY0lMbCtWM2RyekZsazZIaGRlQjl3cUxvQzFGTT0tLUkreEdTNUp1WGZvbkVVTUx3L1V1S1E9PQ==--3a59d2846f42b6c70d7873868ea6798a093f76e8"><img src='https://automate.browserstack.com/badge.svg?badge_key=OHUrN1VyL0FVdDhFUU9CQVJja0tMeHNEU0hsUzROUG9kSkt4MlA5MndYQT0tLWVuMDJMN01oeCtDM1lTN3ZFd1hSdnc9PQ==--0938f2738c3e2fca8e74a5365c4394a0710eee7a'/></a>
   <a href="https://snyk.io//test/github/transcend-io/conflux?targetFile=package.json"><img src="https://snyk.io//test/github/transcend-io/conflux/badge.svg?targetFile=package.json" alt="Known Vulnerabilities"></a>
 <a href="https://app.fossa.io/projects/git%2Bgithub.com%2Ftranscend-io%2Fconflux?ref=badge_shield" alt="FOSSA Status"><img src="https://app.fossa.io/api/projects/git%2Bgithub.com%2Ftranscend-io%2Fconflux.svg?type=shield"/></a>
   <a href="https://codecov.io/gh/transcend-io/conflux"><img src="https://codecov.io/gh/transcend-io/conflux/branch/master/graph/badge.svg" alt="Code Coverage"></a>
