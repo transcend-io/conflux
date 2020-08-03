@@ -1,13 +1,20 @@
-import _regeneratorRuntime from '@babel/runtime/regenerator';
-import _asyncToGenerator from '@babel/runtime/helpers/asyncToGenerator';
-import _classCallCheck from '@babel/runtime/helpers/classCallCheck';
-import _createClass from '@babel/runtime/helpers/createClass';
-import _awaitAsyncGenerator from '@babel/runtime/helpers/awaitAsyncGenerator';
-import _wrapAsyncGenerator from '@babel/runtime/helpers/wrapAsyncGenerator';
+import _regeneratorRuntime from '@babel/runtime-corejs3/regenerator';
+import _asyncToGenerator from '@babel/runtime-corejs3/helpers/asyncToGenerator';
+import _sliceInstanceProperty from '@babel/runtime-corejs3/core-js-stable/instance/slice';
+import _classCallCheck from '@babel/runtime-corejs3/helpers/classCallCheck';
+import _createClass from '@babel/runtime-corejs3/helpers/createClass';
+import _awaitAsyncGenerator from '@babel/runtime-corejs3/helpers/awaitAsyncGenerator';
+import _wrapAsyncGenerator from '@babel/runtime-corejs3/helpers/wrapAsyncGenerator';
 import { Inflate } from 'pako';
-import _inherits from '@babel/runtime/helpers/inherits';
-import _possibleConstructorReturn from '@babel/runtime/helpers/possibleConstructorReturn';
-import _getPrototypeOf from '@babel/runtime/helpers/getPrototypeOf';
+import _Reflect$construct from '@babel/runtime-corejs3/core-js-stable/reflect/construct';
+import _inherits from '@babel/runtime-corejs3/helpers/inherits';
+import _possibleConstructorReturn from '@babel/runtime-corejs3/helpers/possibleConstructorReturn';
+import _getPrototypeOf from '@babel/runtime-corejs3/helpers/getPrototypeOf';
+import _forEachInstanceProperty from '@babel/runtime-corejs3/core-js-stable/instance/for-each';
+import _endsWithInstanceProperty from '@babel/runtime-corejs3/core-js-stable/instance/ends-with';
+import _Date$now from '@babel/runtime-corejs3/core-js-stable/date/now';
+import _trimInstanceProperty from '@babel/runtime-corejs3/core-js-stable/instance/trim';
+import _Object$create from '@babel/runtime-corejs3/core-js-stable/object/create';
 import { TransformStream } from 'web-streams-polyfill/ponyfill';
 
 var Crc32 = /*#__PURE__*/function () {
@@ -79,10 +86,12 @@ var Entry = /*#__PURE__*/function () {
     this._extraFields = {};
 
     for (var i = 46 + this.filenameLength; i < dv.byteLength;) {
+      var _context;
+
       var id = dv.getUint16(i, true);
       var len = dv.getUint16(i + 2, true);
       var start = dv.byteOffset + i + 4;
-      this._extraFields[id] = new DataView(dv.buffer.slice(start, start + len));
+      this._extraFields[id] = new DataView(_sliceInstanceProperty(_context = dv.buffer).call(_context, start, start + len));
       i += len + 4;
     }
   }
@@ -103,21 +112,23 @@ var Entry = /*#__PURE__*/function () {
           var _this = this;
 
           return _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee() {
+            var _context2, _context3;
+
             var ab, bytes, localFileOffset, start, end;
-            return _regeneratorRuntime.wrap(function _callee$(_context) {
+            return _regeneratorRuntime.wrap(function _callee$(_context4) {
               while (1) {
-                switch (_context.prev = _context.next) {
+                switch (_context4.prev = _context4.next) {
                   case 0:
-                    _context.next = 2;
-                    return self._fileLike.slice(self.offset + 26, self.offset + 30).arrayBuffer();
+                    _context4.next = 2;
+                    return _sliceInstanceProperty(_context2 = self._fileLike).call(_context2, self.offset + 26, self.offset + 30).arrayBuffer();
 
                   case 2:
-                    ab = _context.sent;
+                    ab = _context4.sent;
                     bytes = new Uint8Array(ab);
                     localFileOffset = uint16e(bytes, 0) + uint16e(bytes, 2) + 30;
                     start = self.offset + localFileOffset;
                     end = start + self.compressedSize;
-                    _this.reader = self._fileLike.slice(start, end).stream().getReader();
+                    _this.reader = _sliceInstanceProperty(_context3 = self._fileLike).call(_context3, start, end).stream().getReader();
 
                     if (self.compressionMethod) {
                       inflator = new Inflate({
@@ -136,7 +147,7 @@ var Entry = /*#__PURE__*/function () {
 
                   case 9:
                   case "end":
-                    return _context.stop();
+                    return _context4.stop();
                 }
               }
             }, _callee);
@@ -147,20 +158,20 @@ var Entry = /*#__PURE__*/function () {
 
           return _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee2() {
             var v;
-            return _regeneratorRuntime.wrap(function _callee2$(_context2) {
+            return _regeneratorRuntime.wrap(function _callee2$(_context5) {
               while (1) {
-                switch (_context2.prev = _context2.next) {
+                switch (_context5.prev = _context5.next) {
                   case 0:
-                    _context2.next = 2;
+                    _context5.next = 2;
                     return _this2.reader.read();
 
                   case 2:
-                    v = _context2.sent;
+                    v = _context5.sent;
                     inflator ? !v.done && inflator.push(v.value) : v.done ? onEnd(ctrl) : (ctrl.enqueue(v.value), crc.append(v.value));
 
                   case 4:
                   case "end":
-                    return _context2.stop();
+                    return _context5.stop();
                 }
               }
             }, _callee2);
@@ -304,7 +315,9 @@ var Entry = /*#__PURE__*/function () {
     key: "name",
     get: function get() {
       if (!this.bitFlag && this._extraFields && this._extraFields[0x7075]) {
-        return decoder.decode(this._extraFields[0x7075].buffer.slice(5));
+        var _context6;
+
+        return decoder.decode(_sliceInstanceProperty(_context6 = this._extraFields[0x7075].buffer).call(_context6, 5));
       }
 
       var dv = this.dataView;
@@ -365,50 +378,50 @@ function _Reader() {
   _Reader = _wrapAsyncGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee4(file) {
     var doSeek, _doSeek, dv, fileslength, centralDirSize, centralDirOffset, isZip64, l, relativeOffsetEndOfZip64CentralDir, zip64centralBlob, start, end, blob, bytes, i, index, size;
 
-    return _regeneratorRuntime.wrap(function _callee4$(_context4) {
+    return _regeneratorRuntime.wrap(function _callee4$(_context8) {
       while (1) {
-        switch (_context4.prev = _context4.next) {
+        switch (_context8.prev = _context8.next) {
           case 0:
-            _doSeek = function _ref2() {
+            _doSeek = function _doSeek3() {
               _doSeek = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee3(length) {
                 var ab, bytes, _i;
 
-                return _regeneratorRuntime.wrap(function _callee3$(_context3) {
+                return _regeneratorRuntime.wrap(function _callee3$(_context7) {
                   while (1) {
-                    switch (_context3.prev = _context3.next) {
+                    switch (_context7.prev = _context7.next) {
                       case 0:
-                        _context3.next = 2;
-                        return file.slice(file.size - length).arrayBuffer();
+                        _context7.next = 2;
+                        return _sliceInstanceProperty(file).call(file, file.size - length).arrayBuffer();
 
                       case 2:
-                        ab = _context3.sent;
+                        ab = _context7.sent;
                         bytes = new Uint8Array(ab);
                         _i = bytes.length - EOCDR_MIN;
 
                       case 5:
                         if (!(_i >= 0)) {
-                          _context3.next = 11;
+                          _context7.next = 11;
                           break;
                         }
 
                         if (!(bytes[_i] === 0x50 && bytes[_i + 1] === 0x4b && bytes[_i + 2] === 0x05 && bytes[_i + 3] === 0x06)) {
-                          _context3.next = 8;
+                          _context7.next = 8;
                           break;
                         }
 
-                        return _context3.abrupt("return", new DataView(bytes.buffer, _i, EOCDR_MIN));
+                        return _context7.abrupt("return", new DataView(bytes.buffer, _i, EOCDR_MIN));
 
                       case 8:
                         _i--;
-                        _context3.next = 5;
+                        _context7.next = 5;
                         break;
 
                       case 11:
-                        return _context3.abrupt("return", null);
+                        return _context7.abrupt("return", null);
 
                       case 12:
                       case "end":
-                        return _context3.stop();
+                        return _context7.stop();
                     }
                   }
                 }, _callee3);
@@ -416,40 +429,40 @@ function _Reader() {
               return _doSeek.apply(this, arguments);
             };
 
-            doSeek = function _ref(_x2) {
+            doSeek = function _doSeek2(_x2) {
               return _doSeek.apply(this, arguments);
             };
 
             if (!(file.size < EOCDR_MIN)) {
-              _context4.next = 4;
+              _context8.next = 4;
               break;
             }
 
             throw new Error(ERR_BAD_FORMAT);
 
           case 4:
-            _context4.next = 6;
+            _context8.next = 6;
             return _awaitAsyncGenerator(doSeek(EOCDR_MIN));
 
           case 6:
-            _context4.t0 = _context4.sent;
+            _context8.t0 = _context8.sent;
 
-            if (_context4.t0) {
-              _context4.next = 11;
+            if (_context8.t0) {
+              _context8.next = 11;
               break;
             }
 
-            _context4.next = 10;
+            _context8.next = 10;
             return _awaitAsyncGenerator(doSeek(Math.min(EOCDR_MAX, file.size)));
 
           case 10:
-            _context4.t0 = _context4.sent;
+            _context8.t0 = _context8.sent;
 
           case 11:
-            dv = _context4.t0;
+            dv = _context8.t0;
 
             if (dv) {
-              _context4.next = 14;
+              _context8.next = 14;
               break;
             }
 
@@ -463,31 +476,31 @@ function _Reader() {
             isZip64 = centralDirOffset === MAX_VALUE_32BITS;
 
             if (!isZip64) {
-              _context4.next = 35;
+              _context8.next = 35;
               break;
             }
 
             l = -dv.byteLength - 20;
-            _context4.t1 = DataView;
-            _context4.next = 23;
-            return _awaitAsyncGenerator(file.slice(l, -dv.byteLength).arrayBuffer());
+            _context8.t1 = DataView;
+            _context8.next = 23;
+            return _awaitAsyncGenerator(_sliceInstanceProperty(file).call(file, l, -dv.byteLength).arrayBuffer());
 
           case 23:
-            _context4.t2 = _context4.sent;
-            dv = new _context4.t1(_context4.t2);
+            _context8.t2 = _context8.sent;
+            dv = new _context8.t1(_context8.t2);
             // const signature = dv.getUint32(0, true) // 4 bytes
             // const diskWithZip64CentralDirStart = dv.getUint32(4, true) // 4 bytes
             relativeOffsetEndOfZip64CentralDir = Number(getBigInt64(dv, 8, true)); // 8 bytes
             // const numberOfDisks = dv.getUint32(16, true) // 4 bytes
 
-            zip64centralBlob = file.slice(relativeOffsetEndOfZip64CentralDir, l);
-            _context4.t3 = DataView;
-            _context4.next = 30;
+            zip64centralBlob = _sliceInstanceProperty(file).call(file, relativeOffsetEndOfZip64CentralDir, l);
+            _context8.t3 = DataView;
+            _context8.next = 30;
             return _awaitAsyncGenerator(zip64centralBlob.arrayBuffer());
 
           case 30:
-            _context4.t4 = _context4.sent;
-            dv = new _context4.t3(_context4.t4);
+            _context8.t4 = _context8.sent;
+            dv = new _context8.t3(_context8.t4);
             // const zip64EndOfCentralSize = dv.getBigInt64(4, true)
             // const diskNumber = dv.getUint32(16, true)
             // const diskWithCentralDirStart = dv.getUint32(20, true)
@@ -498,7 +511,7 @@ function _Reader() {
 
           case 35:
             if (!(centralDirOffset < 0 || centralDirOffset >= file.size)) {
-              _context4.next = 37;
+              _context8.next = 37;
               break;
             }
 
@@ -507,19 +520,19 @@ function _Reader() {
           case 37:
             start = centralDirOffset;
             end = centralDirOffset + centralDirSize;
-            blob = file.slice(start, end);
-            _context4.t5 = Uint8Array;
-            _context4.next = 43;
+            blob = _sliceInstanceProperty(file).call(file, start, end);
+            _context8.t5 = Uint8Array;
+            _context8.next = 43;
             return _awaitAsyncGenerator(blob.arrayBuffer());
 
           case 43:
-            _context4.t6 = _context4.sent;
-            bytes = new _context4.t5(_context4.t6);
+            _context8.t6 = _context8.sent;
+            bytes = new _context8.t5(_context8.t6);
             i = 0, index = 0;
 
           case 46:
             if (!(i < fileslength)) {
-              _context4.next = 56;
+              _context8.next = 56;
               break;
             }
 
@@ -529,14 +542,14 @@ function _Reader() {
             46;
 
             if (!(index + size > bytes.length)) {
-              _context4.next = 50;
+              _context8.next = 50;
               break;
             }
 
             throw new Error('Invalid ZIP file.');
 
           case 50:
-            _context4.next = 52;
+            _context8.next = 52;
             return new Entry(new DataView(bytes.buffer, index, size), file);
 
           case 52:
@@ -544,12 +557,12 @@ function _Reader() {
 
           case 53:
             i++;
-            _context4.next = 46;
+            _context8.next = 46;
             break;
 
           case 56:
           case "end":
-            return _context4.stop();
+            return _context8.stop();
         }
       }
     }, _callee4);
@@ -559,35 +572,9 @@ function _Reader() {
 
 var _globalThis$WebStream;
 
-function _createSuper(Derived) {
-  function isNativeReflectConstruct() {
-    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-    if (Reflect.construct.sham) return false;
-    if (typeof Proxy === "function") return true;
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = _Reflect$construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
 
-    try {
-      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  return function () {
-    var Super = _getPrototypeOf(Derived),
-        result;
-
-    if (isNativeReflectConstruct()) {
-      var NewTarget = _getPrototypeOf(this).constructor;
-
-      result = Reflect.construct(Super, arguments, NewTarget);
-    } else {
-      result = Super.apply(this, arguments);
-    }
-
-    return _possibleConstructorReturn(this, result);
-  };
-}
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !_Reflect$construct) return false; if (_Reflect$construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(_Reflect$construct(Date, [], function () {})); return true; } catch (e) { return false; } }
 var encoder = new TextEncoder();
 var BigInt$1 = globalThis.BigInt || globalThis.Number;
 
@@ -595,7 +582,7 @@ var ZipTransformer = /*#__PURE__*/function () {
   function ZipTransformer() {
     _classCallCheck(this, ZipTransformer);
 
-    this.files = Object.create(null);
+    this.files = _Object$create(null);
     this.filenames = [];
     this.offset = BigInt$1(0);
   }
@@ -612,14 +599,16 @@ var ZipTransformer = /*#__PURE__*/function () {
     key: "transform",
     value: function () {
       var _transform = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee(entry, ctrl) {
+        var _context;
+
         var name, date, nameBuf, zipObject, header, hdv, data, footer, reader, it, chunk;
-        return _regeneratorRuntime.wrap(function _callee$(_context) {
+        return _regeneratorRuntime.wrap(function _callee$(_context2) {
           while (1) {
-            switch (_context.prev = _context.next) {
+            switch (_context2.prev = _context2.next) {
               case 0:
-                name = entry.name.trim();
-                date = new Date(typeof entry.lastModified === 'undefined' ? Date.now() : entry.lastModified);
-                if (entry.directory && !name.endsWith('/')) name += '/';
+                name = _trimInstanceProperty(_context = entry.name).call(_context);
+                date = new Date(typeof entry.lastModified === 'undefined' ? _Date$now() : entry.lastModified);
+                if (entry.directory && !_endsWithInstanceProperty(name).call(name, '/')) name += '/';
                 if (this.files[name]) ctrl.abort(new Error('File already exists.'));
                 nameBuf = encoder.encode(name);
                 this.filenames.push(name);
@@ -649,7 +638,7 @@ var ZipTransformer = /*#__PURE__*/function () {
                 footer.set([80, 75, 7, 8]);
 
                 if (!entry.stream) {
-                  _context.next = 42;
+                  _context2.next = 42;
                   break;
                 }
 
@@ -658,18 +647,18 @@ var ZipTransformer = /*#__PURE__*/function () {
 
               case 25:
 
-                _context.next = 28;
+                _context2.next = 28;
                 return reader.read();
 
               case 28:
-                it = _context.sent;
+                it = _context2.sent;
 
                 if (!it.done) {
-                  _context.next = 31;
+                  _context2.next = 31;
                   break;
                 }
 
-                return _context.abrupt("break", 38);
+                return _context2.abrupt("break", 38);
 
               case 31:
                 chunk = it.value;
@@ -677,7 +666,7 @@ var ZipTransformer = /*#__PURE__*/function () {
                 zipObject.uncompressedLength += BigInt$1(chunk.length);
                 zipObject.compressedLength += BigInt$1(chunk.length);
                 ctrl.enqueue(chunk);
-                _context.next = 25;
+                _context2.next = 25;
                 break;
 
               case 38:
@@ -693,7 +682,7 @@ var ZipTransformer = /*#__PURE__*/function () {
 
               case 45:
               case "end":
-                return _context.stop();
+                return _context2.stop();
             }
           }
         }, _callee, this);
@@ -712,18 +701,23 @@ var ZipTransformer = /*#__PURE__*/function () {
   }, {
     key: "flush",
     value: function flush(ctrl) {
-      var _this = this;
+      var _context3,
+          _this = this,
+          _context4;
 
       var length = 0;
       var index = 0;
       var file;
-      this.filenames.forEach(function (fileName) {
+
+      _forEachInstanceProperty(_context3 = this.filenames).call(_context3, function (fileName) {
         file = _this.files[fileName];
         length += 46 + file.nameBuf.length + file.comment.length;
       });
+
       var data = new Uint8Array(length + 22);
       var dv = new DataView(data.buffer);
-      this.filenames.forEach(function (fileName) {
+
+      _forEachInstanceProperty(_context4 = this.filenames).call(_context4, function (fileName) {
         file = _this.files[fileName];
         dv.setUint32(index, 0x504b0102);
         dv.setUint16(index + 4, 0x1400);
@@ -735,6 +729,7 @@ var ZipTransformer = /*#__PURE__*/function () {
         data.set(file.comment, index + 46 + file.nameBuf.length);
         index += 46 + file.nameBuf.length + file.comment.length;
       });
+
       dv.setUint32(index, 0x504b0506);
       dv.setUint16(index + 8, this.filenames.length, true);
       dv.setUint16(index + 10, this.filenames.length, true);
@@ -742,7 +737,7 @@ var ZipTransformer = /*#__PURE__*/function () {
       dv.setUint32(index + 16, Number(this.offset), true);
       ctrl.enqueue(data); // cleanup
 
-      this.files = Object.create(null);
+      this.files = _Object$create(null);
       this.filenames = [];
       this.offset = 0;
     }

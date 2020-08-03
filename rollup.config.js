@@ -4,6 +4,21 @@ import babel from '@rollup/plugin-babel';
 import { terser } from 'rollup-plugin-terser';
 import pkg from './package.json';
 
+const babelDefaults = {
+  // see: https://github.com/rollup/plugins/tree/master/packages/babel#babelhelpers and the note about @babel/runtime for CJS/ES
+  babelHelpers: 'runtime',
+  configFile: './babel.config.js',
+  plugins: [
+    [
+      '@babel/plugin-transform-runtime',
+      {
+        regenerator: true,
+        corejs: 3,
+      },
+    ],
+  ],
+}
+
 export default [
   // browser-friendly UMD build
   {
@@ -18,19 +33,7 @@ export default [
     plugins: [
       resolve(), // so Rollup can find package dependencies
       commonjs(), // so Rollup can convert package dependencies to an ES module
-      babel({
-        // see: https://github.com/rollup/plugins/tree/master/packages/babel#babelhelpers and the note about @babel/runtime for CJS/ES
-        babelHelpers: 'runtime',
-        configFile: './babel.config.js',
-        plugins: [
-          [
-            '@babel/plugin-transform-runtime',
-            {
-              regenerator: true,
-            },
-          ],
-        ],
-      }),
+      babel(babelDefaults),
       terser(),
     ],
   },
@@ -50,18 +53,8 @@ export default [
     ],
     plugins: [
       babel({
+        ...babelDefaults,
         exclude: ['node_modules/**'],
-        // see: https://github.com/rollup/plugins/tree/master/packages/babel#babelhelpers and the note about @babel/runtime for CJS/ES
-        babelHelpers: 'runtime',
-        configFile: './babel.config.js',
-        plugins: [
-          [
-            '@babel/plugin-transform-runtime',
-            {
-              regenerator: true,
-            },
-          ],
-        ],
       }),
     ],
   },

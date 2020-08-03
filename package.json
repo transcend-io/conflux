@@ -1,6 +1,6 @@
 {
   "name": "@transcend-io/conflux",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "Build zip files out of readable streams in the browser",
   "main": "dist/conflux.umd.min.js",
   "module": "dist/conflux.esm.js",
@@ -68,12 +68,12 @@
     "@rollup/plugin-node-resolve": "^8.4.0",
     "buffer": "^5.6.0",
     "codecov": "^3.6.5",
-    "eslint": "^6.8.0",
+    "eslint": "^7.6.0",
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-config-prettier": "^6.10.0",
     "eslint-plugin-import": "^2.18.0",
     "eslint-plugin-prettier": "^3.1.2",
-    "karma": "^4.4.1",
+    "karma": "^5.1.1",
     "karma-browserstack-launcher": "^1.5.1",
     "karma-chrome-launcher": "^3.1.0",
     "karma-coverage": "^2.0.1",
@@ -81,15 +81,15 @@
     "karma-tap": "^4.2.0",
     "live-server": "^1.2.1",
     "markdown-toc": "^1.2.0",
-    "prettier": "^1.19.1",
+    "prettier": "^2.0.5",
     "rollup": "^2.23.0",
     "rollup-plugin-node-polyfills": "^0.2.1",
     "rollup-plugin-terser": "^6.1.0",
-    "tape": "^4.11.0"
+    "tape": "^5.0.1"
   },
   "dependencies": {
     "@babel/runtime": "^7.11.0",
     "pako": "^1.0.11",
-    "web-streams-polyfill": "^2.1.0"
+    "web-streams-polyfill": "^3.0.0"
   }
 }
