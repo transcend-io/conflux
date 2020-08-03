@@ -41,6 +41,8 @@
 
 ### Importing Conflux
 
+#### Package Manager
+
 ```sh
 # With Yarn
 yarn add @transcend-io/conflux
@@ -50,9 +52,17 @@ npm install --save @transcend-io/conflux
 ```
 
 ```js
-import { Writer } from '@transcend-io/conflux';
+import { Reader, Writer } from '@transcend-io/conflux';
+```
 
-const { readable, writable } = new Writer();
+#### CDN
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@transcend-io/conflux@3"></script>
+```
+
+```js
+const { Reader, Writer } = window.conflux;
 ```
 
 ### Writing a ZIP
