@@ -11,7 +11,7 @@ export default [
     output: [
       {
         name: 'conflux',
-        file: pkg.unpkg,
+        file: pkg.main,
         format: 'umd',
       },
     ],
@@ -41,28 +41,28 @@ export default [
   // builds from a single configuration where possible, using
   // an array for the `output` option, where we can specify
   // `file` and `format` for each target)
-  {
-    input: 'src/index.js',
-    external: [/pako/, /web-streams-polyfill/, /@babel\/runtime/],
-    output: [
-      // { file: pkg.main, format: 'cjs' }, // don't need a Node import yet
-      { file: pkg.main, format: 'es' },
-    ],
-    plugins: [
-      babel({
-        exclude: ['node_modules/**'],
-        // see: https://github.com/rollup/plugins/tree/master/packages/babel#babelhelpers and the note about @babel/runtime for CJS/ES
-        babelHelpers: 'runtime',
-        configFile: './babel.config.js',
-        plugins: [
-          [
-            '@babel/plugin-transform-runtime',
-            {
-              regenerator: true,
-            },
-          ],
-        ],
-      }),
-    ],
-  },
+  // {
+  //   input: 'src/index.js',
+  //   external: [/pako/, /web-streams-polyfill/, /@babel\/runtime/],
+  //   output: [
+  //     // { file: pkg.main, format: 'cjs' }, // don't need a Node import yet
+  //     { file: pkg.module, format: 'es' },
+  //   ],
+  //   plugins: [
+  //     babel({
+  //       exclude: ['node_modules/**'],
+  //       // see: https://github.com/rollup/plugins/tree/master/packages/babel#babelhelpers and the note about @babel/runtime for CJS/ES
+  //       babelHelpers: 'runtime',
+  //       configFile: './babel.config.js',
+  //       plugins: [
+  //         [
+  //           '@babel/plugin-transform-runtime',
+  //           {
+  //             regenerator: true,
+  //           },
+  //         ],
+  //       ],
+  //     }),
+  //   ],
+  // },
 ];
