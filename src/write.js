@@ -153,8 +153,7 @@ class ZipTransformer {
 
 const ts =
   globalThis.TransformStream ||
-  (globalThis.WebStreamsPolyfill &&
-    globalThis.WebStreamsPolyfill.TransformStream) ||
+  globalThis.WebStreamsPolyfill?.TransformStream ||
   PonyfillTransformStream;
 
 class Writer extends ts {

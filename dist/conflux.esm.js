@@ -557,6 +557,8 @@ function _Reader() {
   return _Reader.apply(this, arguments);
 }
 
+var _globalThis$WebStream;
+
 function _createSuper(Derived) {
   function isNativeReflectConstruct() {
     if (typeof Reflect === "undefined" || !Reflect.construct) return false;
@@ -749,7 +751,7 @@ var ZipTransformer = /*#__PURE__*/function () {
   return ZipTransformer;
 }();
 
-var ts = globalThis.TransformStream || globalThis.WebStreamsPolyfill && globalThis.WebStreamsPolyfill.TransformStream || TransformStream;
+var ts = globalThis.TransformStream || ((_globalThis$WebStream = globalThis.WebStreamsPolyfill) === null || _globalThis$WebStream === void 0 ? void 0 : _globalThis$WebStream.TransformStream) || TransformStream;
 
 var Writer = /*#__PURE__*/function (_ts) {
   _inherits(Writer, _ts);
