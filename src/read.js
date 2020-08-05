@@ -9,9 +9,9 @@
  */
 // eslint-disable-next-line import/extensions
 import { Inflate } from 'pako';
+import JSBI from 'jsbi';
 import Crc32 from './crc.js';
 
-const BigInt = globalThis.BigInt || globalThis.Number;
 const ERR_BAD_FORMAT = 'File format is not recognized.';
 const ZIP_COMMENT_MAX = 65536;
 const EOCDR_MIN = 22;
@@ -176,10 +176,7 @@ class Entry {
         const localFileOffset = uint16e(bytes, 0) + uint16e(bytes, 2) + 30;
         const start = self.offset + localFileOffset;
         const end = start + self.compressedSize;
-        this.reader = self._fileLike
-          .slice(start, end)
-          .stream()
-          .getReader();
+        this.reader = self._fileLike.slice(start, end).stream().getReader();
 
         if (self.compressionMethod) {
           inflator = new Inflate({ raw: true });
@@ -227,11 +224,7 @@ class Entry {
 }
 
 function getBigInt64(view, position, littleEndian = false) {
-  if ('getBigInt64' in DataView.prototype) {
-    return view.getBigInt64(position, littleEndian);
-  }
-
-  let value = BigInt(0);
+  let value = JSBI.BigInt(0);
   const isNegative =
     (view.getUint8(position + (littleEndian ? 7 : 0)) & 0x80) > 0;
   let carrying = true;
@@ -250,11 +243,17 @@ function getBigInt64(view, position, littleEndian = false) {
       }
     }
 
-    value += BigInt(byte) * Math.pow(BigInt(256), BigInt(i));
+    value = JSBI.add(
+      value,
+      JSBI.multiply(
+        JSBI.BigInt(byte),
+        JSBI.exponentiate(JSBI.BigInt(256), JSBI.BigInt(i)),
+      ),
+    );
   }
 
   if (isNegative) {
-    value = -value;
+    value = JSBI.unaryMinus(value);
   }
 
   return value;
@@ -303,7 +302,9 @@ async function* Reader(file) {
 
     // const signature = dv.getUint32(0, true) // 4 bytes
     // const diskWithZip64CentralDirStart = dv.getUint32(4, true) // 4 bytes
-    const relativeOffsetEndOfZip64CentralDir = Number(getBigInt64(dv, 8, true)); // 8 bytes
+    const relativeOffsetEndOfZip64CentralDir = JSBI.toNumber(
+      getBigInt64(dv, 8, true),
+    ); // 8 bytes
     // const numberOfDisks = dv.getUint32(16, true) // 4 bytes
 
     const zip64centralBlob = file.slice(relativeOffsetEndOfZip64CentralDir, l);
@@ -312,9 +313,9 @@ async function* Reader(file) {
     // const diskNumber = dv.getUint32(16, true)
     // const diskWithCentralDirStart = dv.getUint32(20, true)
     // const centralDirRecordsOnThisDisk = dv.getBigInt64(24, true)
-    fileslength = Number(getBigInt64(dv, 32, true));
-    centralDirSize = Number(getBigInt64(dv, 40, true));
-    centralDirOffset = Number(getBigInt64(dv, 48, true));
+    fileslength = JSBI.toNumber(getBigInt64(dv, 32, true));
+    centralDirSize = JSBI.toNumber(getBigInt64(dv, 40, true));
+    centralDirOffset = JSBI.toNumber(getBigInt64(dv, 48, true));
   }
 
   if (centralDirOffset < 0 || centralDirOffset >= file.size) {
