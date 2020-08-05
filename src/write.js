@@ -12,7 +12,6 @@ import JSBI from 'jsbi';
 import Crc32 from './crc.js';
 
 const encoder = new TextEncoder();
-const BigInt = globalThis.BigInt || globalThis.Number;
 
 class ZipTransformer {
   constructor() {
