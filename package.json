@@ -1,8 +1,11 @@
 {
   "name": "@transcend-io/conflux",
-  "version": "3.0.4",
+  "version": "3.0.6",
   "description": "Build zip files out of readable streams in the browser",
   "main": "dist/conflux.umd.min.js",
+  "jsdelivr": "dist/conflux.umd.min.js",
+  "unpkg": "dist/conflux.umd.min.js",
+  "browser": "dist/conflux.esm.js",
   "module": "dist/conflux.esm.js",
   "scripts": {
     "####### Test #######": "",
