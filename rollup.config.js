@@ -17,6 +17,7 @@ const babelDefaults = {
       },
     ],
   ],
+  exclude: ['node_modules/**'],
 }
 
 export default [
@@ -52,10 +53,7 @@ export default [
       { file: pkg.module, format: 'es' },
     ],
     plugins: [
-      babel({
-        ...babelDefaults,
-        exclude: ['node_modules/**'],
-      }),
+      babel(babelDefaults),
     ],
   },
 ];
