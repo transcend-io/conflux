@@ -224,6 +224,10 @@ class Entry {
 }
 
 function getBigInt64(view, position, littleEndian = false) {
+  if ('getBigInt64' in DataView.prototype) {
+    return view.getBigInt64(position, littleEndian);
+  }
+
   let value = JSBI.BigInt(0);
   const isNegative =
     (view.getUint8(position + (littleEndian ? 7 : 0)) & 0x80) > 0;
