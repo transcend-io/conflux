@@ -44,8 +44,8 @@ if (globalThis.BigInt) {
   jsbi['ADD'] = (a, b) => a + b;
 
   // unary functions to expressions
-  jsbi['unaryMinus'] = (a) = -a;
-  jsbi['bitwiseNot'] = (a) = ~a;
+  jsbi['unaryMinus'] = (a) => -a;
+  jsbi['bitwiseNot'] = (a) => ~a;
 
   // static methods
   jsbi['asIntN'] = (a, b) => BigInt.asIntN(a, b);
