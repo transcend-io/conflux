@@ -36,7 +36,6 @@ module.exports = (config) => ({
       format: 'iife', // Helps prevent naming collisions.
       name: 'confluxTest', // Required for 'iife' format.
       sourcemap: 'inline', // Sensible for testing.
-      file: 'dist/test2.js',
     },
     plugins: [
       resolve({
