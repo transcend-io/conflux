@@ -10,7 +10,7 @@ async function isSmiley(entry) {
 }
 
 // All test are orderd by filename
-test('all_appended_bytes.zip', async (t) => {
+test('Reading - all_appended_bytes.zip', async (t) => {
   const it = Reader(fixtures['all_appended_bytes.zip']);
 
   // entry 1
@@ -34,7 +34,7 @@ test('all_appended_bytes.zip', async (t) => {
   t.end();
 });
 
-test('all_missing_bytes.zip', async (t) => {
+test('Reading - all_missing_bytes.zip', async (t) => {
   const err = await Reader(fixtures['all_missing_bytes.zip'])
     .next()
     .catch((a) => a);
@@ -48,7 +48,7 @@ test.skip('all_prepended_bytes.zip', async (t) => {
   t.end();
 });
 
-test('all-stream.zip', async (t) => {
+test('Reading - all-stream.zip', async (t) => {
   const it = Reader(fixtures['all-stream.zip']);
 
   // entry 1
@@ -71,7 +71,7 @@ test('all-stream.zip', async (t) => {
   t.end();
 });
 
-test('all.7zip.zip', async (t) => {
+test('Reading - all.7zip.zip', async (t) => {
   const it = Reader(fixtures['all.7zip.zip']);
 
   // entry 1
@@ -97,7 +97,7 @@ test('all.7zip.zip', async (t) => {
   t.end();
 });
 
-test('all.windows.zip', async (t) => {
+test('Reading - all.windows.zip', async (t) => {
   const it = Reader(fixtures['all.windows.zip']);
 
   // entry 1
@@ -116,7 +116,7 @@ test('all.windows.zip', async (t) => {
   t.end();
 });
 
-test('all.zip', async (t) => {
+test('Reading - all.zip', async (t) => {
   const it = Reader(fixtures['all.zip']);
 
   // entry 1
@@ -141,7 +141,7 @@ test('all.zip', async (t) => {
   t.end();
 });
 
-test('archive_comment.zip', async (t) => {
+test('Reading - archive_comment.zip', async (t) => {
   const it = Reader(fixtures['archive_comment.zip']);
 
   // entry 1
@@ -155,7 +155,7 @@ test('archive_comment.zip', async (t) => {
   t.end();
 });
 
-test('backslash.zip', async (t) => {
+test('Reading - backslash.zip', async (t) => {
   const it = Reader(fixtures['backslash.zip']);
 
   // entry 1
@@ -171,7 +171,7 @@ test('backslash.zip', async (t) => {
 
 // use -fd to force data descriptors as if streaming
 // zip -fd -0 data_descriptor.zip Hello.txt
-test('data_descriptor.zip', async (t) => {
+test('Reading - data_descriptor.zip', async (t) => {
   const it = Reader(fixtures['data_descriptor.zip']);
 
   // entry 1
@@ -186,7 +186,7 @@ test('data_descriptor.zip', async (t) => {
 });
 
 // zip -6 -X -fd deflate-stream.zip Hello.txt
-test('deflate-stream.zip', async (t) => {
+test('Reading - deflate-stream.zip', async (t) => {
   const it = Reader(fixtures['deflate-stream.zip']);
 
   // entry 1
@@ -207,7 +207,7 @@ test('deflate-stream.zip', async (t) => {
 });
 
 // zip -6 -X deflate.zip Hello.txt
-test('deflate.zip', async (t) => {
+test('Reading - deflate.zip', async (t) => {
   const it = Reader(fixtures['deflate.zip']);
 
   // entry 1
@@ -228,14 +228,14 @@ test('deflate.zip', async (t) => {
 });
 
 // zip -0 -X empty.zip plop && zip -d empty.zip plop
-test('empty.zip', async (t) => {
+test('Reading - empty.zip', async (t) => {
   const it = Reader(fixtures['empty.zip']);
   t.ok((await it.next()).done);
   t.end();
 });
 
 // zip -0 -X -e encrypted.zip Hello.txt
-test('encrypted.zip', async (t) => {
+test('Reading - encrypted.zip', async (t) => {
   const it = Reader(fixtures['encrypted.zip']);
 
   // entry 1
@@ -256,7 +256,7 @@ test('encrypted.zip', async (t) => {
   t.end();
 });
 
-test('extra_attributes.zip', async (t) => {
+test('Reading - extra_attributes.zip', async (t) => {
   const it = Reader(fixtures['extra_attributes.zip']);
 
   // entry 1
@@ -273,7 +273,7 @@ test('extra_attributes.zip', async (t) => {
   t.end();
 });
 
-test('folder.zip', async (t) => {
+test('Reading - folder.zip', async (t) => {
   const it = Reader(fixtures['folder.zip']);
 
   // entry 1
@@ -289,7 +289,7 @@ test('folder.zip', async (t) => {
   t.end();
 });
 
-test('image.zip', async (t) => {
+test('Reading - image.zip', async (t) => {
   const it = Reader(fixtures['image.zip']);
 
   // entry 1
@@ -305,7 +305,7 @@ test('image.zip', async (t) => {
   t.end();
 });
 
-test('local_encoding_in_name.zip', async (t) => {
+test('Reading - local_encoding_in_name.zip', async (t) => {
   const it = Reader(fixtures['local_encoding_in_name.zip']);
 
   // ["Новая папка/Новый текстовый документ.txt"]
@@ -331,7 +331,7 @@ test('local_encoding_in_name.zip', async (t) => {
 });
 
 // zip -fd -0 nested_data_descriptor.zip data_descriptor.zip
-test('nested_data_descriptor.zip', async (t) => {
+test('Reading - nested_data_descriptor.zip', async (t) => {
   const it = Reader(fixtures['nested_data_descriptor.zip']);
 
   // entry 1
@@ -345,7 +345,7 @@ test('nested_data_descriptor.zip', async (t) => {
 });
 
 // zip -fd -0 nested_data_descriptor.zip data_descriptor.zip
-test('nested_data_descriptor.zip', async (t) => {
+test('Reading - nested_data_descriptor.zip', async (t) => {
   const it = Reader(fixtures['nested_data_descriptor.zip']);
 
   // entry 1
@@ -359,7 +359,7 @@ test('nested_data_descriptor.zip', async (t) => {
 });
 
 // zip -fd -0 nested_data_descriptor.zip data_descriptor.zip
-test('nested_zip64.zip', async (t) => {
+test('Reading - nested_zip64.zip', async (t) => {
   const it = Reader(fixtures['nested_zip64.zip']);
 
   // entry 1
@@ -374,7 +374,7 @@ test('nested_zip64.zip', async (t) => {
 });
 
 // zip -0 -X zip_within_zip.zip Hello.txt && zip -0 -X nested.zip Hello.txt zip_within_zip.zip
-test('nested.zip', async (t) => {
+test('Reading - nested.zip', async (t) => {
   const it = Reader(fixtures['nested.zip']);
 
   // entry 1
@@ -397,7 +397,7 @@ test('nested.zip', async (t) => {
 });
 
 // zip --entry-comments --archive-comment -X -0 pile_of_poo.zip Iñtërnâtiônàlizætiøn☃$'\360\237\222\251'.txt
-test('pile_of_poo.zip', async (t) => {
+test('Reading - pile_of_poo.zip', async (t) => {
   const it = Reader(fixtures['pile_of_poo.zip']);
 
   // this is the string "Iñtërnâtiônàlizætiøn☃💩",
@@ -417,7 +417,7 @@ test('pile_of_poo.zip', async (t) => {
 });
 
 // use izarc to generate a zip file on windows
-test('slashes_and_izarc.zip', async (t) => {
+test('Reading - slashes_and_izarc.zip', async (t) => {
   const it = Reader(fixtures['slashes_and_izarc.zip']);
 
   // entry 1
@@ -430,7 +430,7 @@ test('slashes_and_izarc.zip', async (t) => {
 });
 
 // zip -0 -X -fd store-stream.zip Hello.txt
-test('store-stream.zip', async (t) => {
+test('Reading - store-stream.zip', async (t) => {
   const it = Reader(fixtures['store-stream.zip']);
 
   // entry 1
@@ -448,7 +448,7 @@ test('store-stream.zip', async (t) => {
 });
 
 // zip -0 -X store.zip Hello.txt
-test('store.zip', async (t) => {
+test('Reading - store.zip', async (t) => {
   const it = Reader(fixtures['store.zip']);
 
   // entry 1
@@ -465,7 +465,7 @@ test('store.zip', async (t) => {
   t.end();
 });
 
-test('subfolder.zip', async (t) => {
+test('Reading - subfolder.zip', async (t) => {
   const it = Reader(fixtures['subfolder.zip']);
 
   // entry 1
@@ -486,7 +486,7 @@ test('subfolder.zip', async (t) => {
   t.end();
 });
 
-test('text.zip', async (t) => {
+test('Reading - text.zip', async (t) => {
   const it = Reader(fixtures['text.zip']);
 
   // entry 1
@@ -502,7 +502,7 @@ test('text.zip', async (t) => {
 });
 
 // zip -X -0 utf8_in_name.zip €15.txt
-test('utf8_in_name.zip', async (t) => {
+test('Reading - utf8_in_name.zip', async (t) => {
   const it = Reader(fixtures['utf8_in_name.zip']);
 
   // entry 1
@@ -518,7 +518,7 @@ test('utf8_in_name.zip', async (t) => {
 });
 
 // zip -X -0 utf8.zip amount.txt
-test('utf8.zip', async (t) => {
+test('Reading - utf8.zip', async (t) => {
   const it = Reader(fixtures['utf8.zip']);
 
   // entry 1
@@ -535,7 +535,7 @@ test('utf8.zip', async (t) => {
 
 // Created with winrar
 // winrar will replace the euro symbol with a '_' but set the correct unicode path in an extra field.
-test('winrar_utf8_in_name.zip', async (t) => {
+test('Reading - winrar_utf8_in_name.zip', async (t) => {
   const it = Reader(fixtures['winrar_utf8_in_name.zip']);
 
   // entry 1
@@ -563,7 +563,7 @@ test.skip('zip64_missing_bytes.zip', async (t) => {
   t.end();
 });
 
-test('zip64.zip', async (t) => {
+test('Reading - zip64.zip', async (t) => {
   const it = Reader(fixtures['zip64.zip']);
 
   // entry 1
