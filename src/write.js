@@ -8,7 +8,7 @@
  */
 // eslint-disable-next-line import/extensions
 import { TransformStream as PonyfillTransformStream } from 'web-streams-polyfill/ponyfill';
-import JSBI from 'jsbi';
+import JSBI from './jsbi';
 import Crc32 from './crc.js';
 
 const encoder = new TextEncoder();
