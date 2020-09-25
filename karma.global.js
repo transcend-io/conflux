@@ -32,14 +32,12 @@ module.exports = (config) => ({
 
   // see: https://github.com/jlmakes/karma-rollup-preprocessor
   rollupPreprocessor: {
-    output: [
-      {
-        format: 'iife', // Helps prevent naming collisions.
-        name: 'confluxTest', // Required for 'iife' format.
-        sourcemap: true, // Sensible for testing.
-        file: 'dist/test2.js',
-      },
-    ],
+    output: {
+      format: 'iife', // Helps prevent naming collisions.
+      name: 'confluxTest', // Required for 'iife' format.
+      sourcemap: 'inline', // Sensible for testing.
+      file: 'dist/test2.js',
+    },
     plugins: [
       resolve({
         preferBuiltins: true,

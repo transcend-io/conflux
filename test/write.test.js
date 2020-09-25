@@ -23,7 +23,7 @@ const fileLikeUtf8 = {
 };
 const folder = { name: 'folder/', directory: true };
 
-test('All in one big test', async (t) => {
+test('Writing - All in one big test', async (t) => {
   const { readable, writable } = new Writer();
   const writer = writable.getWriter();
   writer.write(helloWorld);

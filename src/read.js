@@ -9,7 +9,7 @@
  */
 // eslint-disable-next-line import/extensions
 import { Inflate } from 'pako';
-import JSBI from 'jsbi';
+import JSBI from './jsbi';
 import Crc32 from './crc.js';
 
 const ERR_BAD_FORMAT = 'File format is not recognized.';
@@ -224,6 +224,10 @@ class Entry {
 }
 
 function getBigInt64(view, position, littleEndian = false) {
+  if ('getBigInt64' in DataView.prototype) {
+    return view.getBigInt64(position, littleEndian);
+  }
+
   let value = JSBI.BigInt(0);
   const isNegative =
     (view.getUint8(position + (littleEndian ? 7 : 0)) & 0x80) > 0;
