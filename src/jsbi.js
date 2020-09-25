@@ -6,6 +6,7 @@ let jsbi;
 
 /**
  * If BigInt is natively supported, change JSBI to use native expressions
+ * @see https://github.com/GoogleChromeLabs/jsbi/blob/master/jsbi.d.ts
  * @see https://github.com/GoogleChromeLabs/babel-plugin-transform-jsbi-to-bigint/blob/master/src/index.js
  */
 if (globalThis.BigInt) {
