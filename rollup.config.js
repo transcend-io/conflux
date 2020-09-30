@@ -17,6 +17,7 @@ const babelDefaults = {
       },
     ],
   ],
+  exclude: ['node_modules/**'],
 }
 
 export default [
@@ -46,16 +47,13 @@ export default [
   // `file` and `format` for each target)
   {
     input: 'src/index.js',
-    external: [/pako/, /web-streams-polyfill/, /@babel\/runtime/],
+    external: [/pako/, /jsbi/, /web-streams-polyfill/, /@babel\/runtime/],
     output: [
       // { file: pkg.main, format: 'cjs' }, // don't need a Node import yet
       { file: pkg.module, format: 'es' },
     ],
     plugins: [
-      babel({
-        ...babelDefaults,
-        exclude: ['node_modules/**'],
-      }),
+      babel(babelDefaults),
     ],
   },
 ];

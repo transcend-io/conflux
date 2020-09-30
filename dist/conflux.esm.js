@@ -3,14 +3,15 @@ import _asyncToGenerator from '@babel/runtime-corejs3/helpers/asyncToGenerator';
 import _sliceInstanceProperty from '@babel/runtime-corejs3/core-js/instance/slice';
 import _classCallCheck from '@babel/runtime-corejs3/helpers/classCallCheck';
 import _createClass from '@babel/runtime-corejs3/helpers/createClass';
-import _globalThis from '@babel/runtime-corejs3/core-js/global-this';
 import _awaitAsyncGenerator from '@babel/runtime-corejs3/helpers/awaitAsyncGenerator';
 import _wrapAsyncGenerator from '@babel/runtime-corejs3/helpers/wrapAsyncGenerator';
 import { Inflate } from 'pako';
+import JSBI from './jsbi';
 import _Reflect$construct from '@babel/runtime-corejs3/core-js/reflect/construct';
 import _inherits from '@babel/runtime-corejs3/helpers/inherits';
 import _possibleConstructorReturn from '@babel/runtime-corejs3/helpers/possibleConstructorReturn';
 import _getPrototypeOf from '@babel/runtime-corejs3/helpers/getPrototypeOf';
+import _globalThis from '@babel/runtime-corejs3/core-js/global-this';
 import _forEachInstanceProperty from '@babel/runtime-corejs3/core-js/instance/for-each';
 import _endsWithInstanceProperty from '@babel/runtime-corejs3/core-js/instance/ends-with';
 import _Date$now from '@babel/runtime-corejs3/core-js/date/now';
@@ -61,7 +62,6 @@ Crc32.prototype.table = function (table, i, j, t) {
   return table;
 }([], 0, 0, 0);
 
-var BigInt = _globalThis.BigInt || _globalThis.Number;
 var ERR_BAD_FORMAT = 'File format is not recognized.';
 var ZIP_COMMENT_MAX = 65536;
 var EOCDR_MIN = 22;
@@ -343,7 +343,7 @@ function getBigInt64(view, position) {
     return view.getBigInt64(position, littleEndian);
   }
 
-  var value = BigInt(0);
+  var value = JSBI.BigInt(0);
   var isNegative = (view.getUint8(position + (littleEndian ? 7 : 0)) & 0x80) > 0;
   var carrying = true;
 
@@ -361,11 +361,11 @@ function getBigInt64(view, position) {
       }
     }
 
-    value += BigInt(byte) * Math.pow(BigInt(256), BigInt(i));
+    value = JSBI.add(value, JSBI.multiply(JSBI.BigInt(byte), JSBI.exponentiate(JSBI.BigInt(256), JSBI.BigInt(i))));
   }
 
   if (isNegative) {
-    value = -value;
+    value = JSBI.unaryMinus(value);
   }
 
   return value;
@@ -491,7 +491,7 @@ function _Reader() {
             dv = new _context8.t1(_context8.t2);
             // const signature = dv.getUint32(0, true) // 4 bytes
             // const diskWithZip64CentralDirStart = dv.getUint32(4, true) // 4 bytes
-            relativeOffsetEndOfZip64CentralDir = Number(getBigInt64(dv, 8, true)); // 8 bytes
+            relativeOffsetEndOfZip64CentralDir = JSBI.toNumber(getBigInt64(dv, 8, true)); // 8 bytes
             // const numberOfDisks = dv.getUint32(16, true) // 4 bytes
 
             zip64centralBlob = _sliceInstanceProperty(file).call(file, relativeOffsetEndOfZip64CentralDir, l);
@@ -506,9 +506,9 @@ function _Reader() {
             // const diskNumber = dv.getUint32(16, true)
             // const diskWithCentralDirStart = dv.getUint32(20, true)
             // const centralDirRecordsOnThisDisk = dv.getBigInt64(24, true)
-            fileslength = Number(getBigInt64(dv, 32, true));
-            centralDirSize = Number(getBigInt64(dv, 40, true));
-            centralDirOffset = Number(getBigInt64(dv, 48, true));
+            fileslength = JSBI.toNumber(getBigInt64(dv, 32, true));
+            centralDirSize = JSBI.toNumber(getBigInt64(dv, 40, true));
+            centralDirOffset = JSBI.toNumber(getBigInt64(dv, 48, true));
 
           case 35:
             if (!(centralDirOffset < 0 || centralDirOffset >= file.size)) {
@@ -577,7 +577,6 @@ function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflec
 
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !_Reflect$construct) return false; if (_Reflect$construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(_Reflect$construct(Date, [], function () {})); return true; } catch (e) { return false; } }
 var encoder = new TextEncoder();
-var BigInt$1 = _globalThis.BigInt || _globalThis.Number;
 
 var ZipTransformer = /*#__PURE__*/function () {
   function ZipTransformer() {
@@ -585,7 +584,7 @@ var ZipTransformer = /*#__PURE__*/function () {
 
     this.files = _Object$create(null);
     this.filenames = [];
-    this.offset = BigInt$1(0);
+    this.offset = JSBI.BigInt(0);
   }
   /**
    * [transform description]
@@ -618,8 +617,8 @@ var ZipTransformer = /*#__PURE__*/function () {
                   nameBuf: nameBuf,
                   offset: this.offset,
                   comment: encoder.encode(entry.comment || ''),
-                  compressedLength: BigInt$1(0),
-                  uncompressedLength: BigInt$1(0),
+                  compressedLength: JSBI.BigInt(0),
+                  uncompressedLength: JSBI.BigInt(0),
                   header: new Uint8Array(26)
                 };
                 zipObject = this.files[name];
@@ -633,7 +632,7 @@ var ZipTransformer = /*#__PURE__*/function () {
                 data.set([80, 75, 3, 4]);
                 data.set(header, 4);
                 data.set(nameBuf, 30);
-                this.offset += BigInt$1(data.length);
+                this.offset = JSBI.add(this.offset, JSBI.BigInt(data.length));
                 ctrl.enqueue(data);
                 footer = new Uint8Array(16);
                 footer.set([80, 75, 7, 8]);
@@ -664,21 +663,21 @@ var ZipTransformer = /*#__PURE__*/function () {
               case 31:
                 chunk = it.value;
                 zipObject.crc.append(chunk);
-                zipObject.uncompressedLength += BigInt$1(chunk.length);
-                zipObject.compressedLength += BigInt$1(chunk.length);
+                zipObject.uncompressedLength = JSBI.add(zipObject.uncompressedLength, JSBI.BigInt(chunk.length));
+                zipObject.compressedLength = JSBI.add(zipObject.compressedLength, JSBI.BigInt(chunk.length));
                 ctrl.enqueue(chunk);
                 _context2.next = 25;
                 break;
 
               case 38:
                 hdv.setUint32(10, zipObject.crc.get(), true);
-                hdv.setUint32(14, Number(zipObject.compressedLength), true);
-                hdv.setUint32(18, Number(zipObject.uncompressedLength), true);
+                hdv.setUint32(14, JSBI.toNumber(zipObject.compressedLength), true);
+                hdv.setUint32(18, JSBI.toNumber(zipObject.uncompressedLength), true);
                 footer.set(header.subarray(10, 22), 4);
 
               case 42:
                 hdv.setUint16(22, nameBuf.length, true);
-                this.offset += zipObject.compressedLength + BigInt$1(16);
+                this.offset = JSBI.add(this.offset, JSBI.add(zipObject.compressedLength, JSBI.BigInt(16)));
                 ctrl.enqueue(footer);
 
               case 45:
@@ -724,7 +723,7 @@ var ZipTransformer = /*#__PURE__*/function () {
         dv.setUint16(index + 4, 0x1400);
         dv.setUint16(index + 32, file.comment.length, true);
         dv.setUint8(index + 38, file.directory ? 16 : 0);
-        dv.setUint32(index + 42, Number(file.offset), true);
+        dv.setUint32(index + 42, JSBI.toNumber(file.offset), true);
         data.set(file.header, index + 6);
         data.set(file.nameBuf, index + 46);
         data.set(file.comment, index + 46 + file.nameBuf.length);
@@ -735,7 +734,7 @@ var ZipTransformer = /*#__PURE__*/function () {
       dv.setUint16(index + 8, this.filenames.length, true);
       dv.setUint16(index + 10, this.filenames.length, true);
       dv.setUint32(index + 12, length, true);
-      dv.setUint32(index + 16, Number(this.offset), true);
+      dv.setUint32(index + 16, JSBI.toNumber(this.offset), true);
       ctrl.enqueue(data); // cleanup
 
       this.files = _Object$create(null);
