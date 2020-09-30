@@ -6,18 +6,157 @@ import _createClass from '@babel/runtime-corejs3/helpers/createClass';
 import _awaitAsyncGenerator from '@babel/runtime-corejs3/helpers/awaitAsyncGenerator';
 import _wrapAsyncGenerator from '@babel/runtime-corejs3/helpers/wrapAsyncGenerator';
 import { Inflate } from 'pako';
-import JSBI from './jsbi';
+import _globalThis from '@babel/runtime-corejs3/core-js/global-this';
+import JSBI$1 from 'jsbi';
 import _Reflect$construct from '@babel/runtime-corejs3/core-js/reflect/construct';
 import _inherits from '@babel/runtime-corejs3/helpers/inherits';
 import _possibleConstructorReturn from '@babel/runtime-corejs3/helpers/possibleConstructorReturn';
 import _getPrototypeOf from '@babel/runtime-corejs3/helpers/getPrototypeOf';
-import _globalThis from '@babel/runtime-corejs3/core-js/global-this';
 import _forEachInstanceProperty from '@babel/runtime-corejs3/core-js/instance/for-each';
 import _endsWithInstanceProperty from '@babel/runtime-corejs3/core-js/instance/ends-with';
 import _Date$now from '@babel/runtime-corejs3/core-js/date/now';
 import _trimInstanceProperty from '@babel/runtime-corejs3/core-js/instance/trim';
 import _Object$create from '@babel/runtime-corejs3/core-js/object/create';
 import { TransformStream } from 'web-streams-polyfill/ponyfill';
+
+var jsbi;
+/**
+ * If BigInt is natively supported, change JSBI to use native expressions
+ * @see https://github.com/GoogleChromeLabs/jsbi/blob/master/jsbi.d.ts
+ * @see https://github.com/GoogleChromeLabs/babel-plugin-transform-jsbi-to-bigint/blob/master/src/index.js
+ */
+
+if (_globalThis.BigInt) {
+  jsbi = {}; // constructor
+
+  jsbi['BigInt'] = function (a) {
+    return BigInt(a);
+  }; // note: JSBI toString is already the same: a.toString()
+
+
+  jsbi['toNumber'] = function (a) {
+    return Number(a);
+  }; // binary functions to expressions
+
+
+  jsbi['add'] = function (a, b) {
+    return a + b;
+  };
+
+  jsbi['subtract'] = function (a, b) {
+    return a - b;
+  };
+
+  jsbi['multiply'] = function (a, b) {
+    return a * b;
+  };
+
+  jsbi['divide'] = function (a, b) {
+    return a / b;
+  };
+
+  jsbi['remainder'] = function (a, b) {
+    return a % b;
+  };
+
+  jsbi['exponentiate'] = function (a, b) {
+    return Math.pow(a, b);
+  };
+
+  jsbi['leftShift'] = function (a, b) {
+    return a << b;
+  };
+
+  jsbi['signedRightShift'] = function (a, b) {
+    return a >> b;
+  };
+
+  jsbi['bitwiseAnd'] = function (a, b) {
+    return a & b;
+  };
+
+  jsbi['bitwiseOr'] = function (a, b) {
+    return a | b;
+  };
+
+  jsbi['bitwiseXor'] = function (a, b) {
+    return a ^ b;
+  };
+
+  jsbi['equal'] = function (a, b) {
+    return a === b;
+  };
+
+  jsbi['notEqual'] = function (a, b) {
+    return a !== b;
+  };
+
+  jsbi['lessThan'] = function (a, b) {
+    return a < b;
+  };
+
+  jsbi['lessThanOrEqual'] = function (a, b) {
+    return a <= b;
+  };
+
+  jsbi['greaterThan'] = function (a, b) {
+    return a > b;
+  };
+
+  jsbi['greaterThanOrEqual'] = function (a, b) {
+    return a >= b;
+  };
+
+  jsbi['EQ'] = function (a, b) {
+    return a == b;
+  };
+
+  jsbi['NE'] = function (a, b) {
+    return a != b;
+  };
+
+  jsbi['LT'] = function (a, b) {
+    return a < b;
+  };
+
+  jsbi['LE'] = function (a, b) {
+    return a <= b;
+  };
+
+  jsbi['GT'] = function (a, b) {
+    return a > b;
+  };
+
+  jsbi['GE'] = function (a, b) {
+    return a >= b;
+  };
+
+  jsbi['ADD'] = function (a, b) {
+    return a + b;
+  }; // unary functions to expressions
+
+
+  jsbi['unaryMinus'] = function (a) {
+    return -a;
+  };
+
+  jsbi['bitwiseNot'] = function (a) {
+    return ~a;
+  }; // static methods
+
+
+  jsbi['asIntN'] = function (a, b) {
+    return BigInt.asIntN(a, b);
+  };
+
+  jsbi['asUintN'] = function (a, b) {
+    return BigInt.asUintN(a, b);
+  };
+} else {
+  jsbi = JSBI$1;
+}
+
+var JSBI = jsbi;
 
 var Crc32 = /*#__PURE__*/function () {
   function Crc32() {

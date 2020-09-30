@@ -9,7 +9,7 @@
  */
 // eslint-disable-next-line import/extensions
 import { Inflate } from 'pako';
-import JSBI from './jsbi';
+import JSBI from './bigint';
 import Crc32 from './crc.js';
 
 const ERR_BAD_FORMAT = 'File format is not recognized.';
