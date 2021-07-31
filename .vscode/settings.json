@@ -1,25 +1,28 @@
 {
-    "cSpell.words": [
-        "a",
-        "airtap",
-        "browserstack",
-        "build",
-        "codecov",
-        "example",
-        "exclude",
-        "html",
-        "include",
-        "index",
-        "instrumenter",
-        "istanbul",
-        "js",
-        "karma",
-        "loader",
-        "mjau",
-        "rsync",
-        "sourcemap",
-        "streamsaver",
-        "wärting"
-    ],
-    "eslint.enable": true
+  "cSpell.words": [
+      "a",
+      "airtap",
+      "browserstack",
+      "build",
+      "codecov",
+      "example",
+      "exclude",
+      "html",
+      "include",
+      "index",
+      "instrumenter",
+      "istanbul",
+      "js",
+      "karma",
+      "loader",
+      "mjau",
+      "rsync",
+      "sourcemap",
+      "streamsaver",
+      "wärting"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "eslint.validate": ["javascript"]
 }
