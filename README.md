@@ -69,6 +69,32 @@ const { Reader, Writer } = window.conflux;
 
 ### Creating a ZIP
 
+#### Example using `ReadableStream#pipeThrough`
+
+```js
+import { Writer } from '@transcend-io/conflux';
+import streamSaver from 'streamsaver';
+
+const s3 = 'https://s3-us-west-2.amazonaws.com/bencmbrook/';
+const files = ['NYT.txt', 'water.png', 'Earth.jpg'].values();
+
+const myReadable = new ReadableStream({
+  async pull(controller) {
+    const { done, value } = files.next();
+    if (done) return controller.close();
+    const { body } = await fetch(s3 + value);
+    return controller.enqueue({
+      name: `/${value}`,
+      stream: () => body,
+    });
+  },
+});
+
+myReadable
+  .pipeThrough(new Writer())
+  .pipeTo(streamSaver.createWriteStream('conflux.zip'));
+```
+
 #### Example using `writer.write`
 
 ```js
@@ -93,32 +119,6 @@ writer.write({
 readable.pipeTo(fileStream);
 
 writer.close();
-```
-
-#### Example using `myReadable.pipeThrough`
-
-```js
-import { Writer } from '@transcend-io/conflux';
-import streamSaver from 'streamsaver';
-
-const s3 = 'https://s3-us-west-2.amazonaws.com/bencmbrook/';
-const files = ['NYT.txt', 'water.png', 'Earth.jpg'].values();
-
-const myReadable = new ReadableStream({
-  async pull(controller) {
-    const { done, value } = files.next();
-    if (done) return controller.close();
-    const { body } = await fetch(s3 + value);
-    return controller.enqueue({
-      name: `/${value}`,
-      stream: () => body,
-    });
-  },
-});
-
-myReadable
-  .pipeThrough(new Writer())
-  .pipeTo(streamSaver.createWriteStream('conflux.zip'));
 ```
 
 #### Incorporating other streams
@@ -198,9 +198,6 @@ myReadable
   .pipeTo(streamSaver.createWriteStream('conflux.zip'));
 ```
 
-```
-
 ## License
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Ftranscend-io%2Fconflux.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Ftranscend-io%2Fconflux?ref=badge_large)
-```
