@@ -17,8 +17,6 @@ class ZipTransformer {
   constructor() {
     /* The files zipped */
     this.files = Object.create(null);
-    /* An ordered list of the filenames */
-    this.filenames = [];
     /* The current position of the zipped output stream, in bytes */
     this.offset = JSBI.BigInt(0);
   }
@@ -39,9 +37,6 @@ class ZipTransformer {
 
     // Abort if this a file with this name already exists
     if (this.files[name]) ctrl.abort(new Error('File already exists.'));
-
-    // Add this to the ordered list of filenames
-    this.filenames.push(name);
 
     // TextEncode the name
     const nameBuf = encoder.encode(name);
@@ -138,7 +133,7 @@ class ZipTransformer {
     let index = 0;
     let file;
 
-    this.filenames.forEach((fileName) => {
+    Object.keys(this.files).forEach((fileName) => {
       file = this.files[fileName];
       length += 46 + file.nameBuf.length + file.comment.length;
     });
@@ -146,7 +141,7 @@ class ZipTransformer {
     const data = new Uint8Array(length + 22);
     const dv = new DataView(data.buffer);
 
-    this.filenames.forEach((fileName) => {
+    Object.keys(this.files).forEach((fileName) => {
       file = this.files[fileName];
       dv.setUint32(index, 0x504b0102);
       dv.setUint16(index + 4, 0x1400);
@@ -160,15 +155,14 @@ class ZipTransformer {
     });
 
     dv.setUint32(index, 0x504b0506);
-    dv.setUint16(index + 8, this.filenames.length, true);
-    dv.setUint16(index + 10, this.filenames.length, true);
+    dv.setUint16(index + 8, Object.keys(this.files).length, true);
+    dv.setUint16(index + 10, Object.keys(this.files).length, true);
     dv.setUint32(index + 12, length, true);
     dv.setUint32(index + 16, JSBI.toNumber(this.offset), true);
     ctrl.enqueue(data);
 
     // cleanup
     this.files = Object.create(null);
-    this.filenames = [];
     this.offset = 0;
   }
 }
