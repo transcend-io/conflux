@@ -13,9 +13,9 @@ import _inherits from '@babel/runtime-corejs3/helpers/inherits';
 import _possibleConstructorReturn from '@babel/runtime-corejs3/helpers/possibleConstructorReturn';
 import _getPrototypeOf from '@babel/runtime-corejs3/helpers/getPrototypeOf';
 import _forEachInstanceProperty from '@babel/runtime-corejs3/core-js/instance/for-each';
-import _endsWithInstanceProperty from '@babel/runtime-corejs3/core-js/instance/ends-with';
 import _Date$now from '@babel/runtime-corejs3/core-js/date/now';
 import _trimInstanceProperty from '@babel/runtime-corejs3/core-js/instance/trim';
+import _endsWithInstanceProperty from '@babel/runtime-corejs3/core-js/instance/ends-with';
 import _Object$create from '@babel/runtime-corejs3/core-js/object/create';
 import { TransformStream } from 'web-streams-polyfill/ponyfill';
 
@@ -721,8 +721,13 @@ var ZipTransformer = /*#__PURE__*/function () {
   function ZipTransformer() {
     _classCallCheck(this, ZipTransformer);
 
+    /* The files zipped */
     this.files = _Object$create(null);
+    /* An ordered list of the filenames */
+
     this.filenames = [];
+    /* The current position of the zipped output stream, in bytes */
+
     this.offset = JSBI.BigInt(0);
   }
   /**
@@ -738,19 +743,25 @@ var ZipTransformer = /*#__PURE__*/function () {
     key: "transform",
     value: function () {
       var _transform = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee(entry, ctrl) {
-        var _context;
+        var _context, _context2, _context3, _context4;
 
-        var name, date, nameBuf, zipObject, header, hdv, data, footer, reader, it, chunk;
-        return _regeneratorRuntime.wrap(function _callee$(_context2) {
+        var name, nameBuf, date, zipObject, header, hdv, data, ab2str, footer, reader, it, chunk;
+        return _regeneratorRuntime.wrap(function _callee$(_context5) {
           while (1) {
-            switch (_context2.prev = _context2.next) {
+            switch (_context5.prev = _context5.next) {
               case 0:
-                name = _trimInstanceProperty(_context = entry.name).call(_context);
-                date = new Date(typeof entry.lastModified === 'undefined' ? _Date$now() : entry.lastModified);
-                if (entry.directory && !_endsWithInstanceProperty(name).call(name, '/')) name += '/';
-                if (this.files[name]) ctrl.abort(new Error('File already exists.'));
+                ab2str = function _ab2str(buf) {
+                  return String.fromCharCode.apply(null, new Uint16Array(buf));
+                };
+
+                // Set the File name, ensuring that if it's a directory, it ends with `/`
+                name = entry.directory && !_endsWithInstanceProperty(_context = _trimInstanceProperty(_context2 = entry.name).call(_context2)).call(_context, '/') ? "".concat(_trimInstanceProperty(_context3 = entry.name).call(_context3), "/") : _trimInstanceProperty(_context4 = entry.name).call(_context4); // Abort if this a file with this name already exists
+
+                if (this.files[name]) ctrl.abort(new Error('File already exists.')); // Add this to the ordered list of filenames
+
+                this.filenames.push(name); // TextEncode the name
+
                 nameBuf = encoder.encode(name);
-                this.filenames.push(name);
                 this.files[name] = {
                   directory: !!entry.directory,
                   nameBuf: nameBuf,
@@ -759,15 +770,19 @@ var ZipTransformer = /*#__PURE__*/function () {
                   compressedLength: JSBI.BigInt(0),
                   uncompressedLength: JSBI.BigInt(0),
                   header: new Uint8Array(26)
-                };
+                }; // Set the date, with fallback to current date
+
+                date = new Date(typeof entry.lastModified === 'undefined' ? _Date$now() : entry.lastModified);
                 zipObject = this.files[name];
-                header = zipObject.header;
+                header = zipObject.header; // The File header DataView
+
                 hdv = new DataView(header.buffer);
                 data = new Uint8Array(30 + nameBuf.length);
                 hdv.setUint32(0, 0x14000808);
                 hdv.setUint16(6, (date.getHours() << 6 | date.getMinutes()) << 5 | date.getSeconds() / 2, true);
                 hdv.setUint16(8, (date.getFullYear() - 1980 << 4 | date.getMonth() + 1) << 5 | date.getDate(), true);
                 hdv.setUint16(22, nameBuf.length, true);
+                console.log(ab2str(hdv));
                 data.set([80, 75, 3, 4]);
                 data.set(header, 4);
                 data.set(nameBuf, 30);
@@ -777,51 +792,51 @@ var ZipTransformer = /*#__PURE__*/function () {
                 footer.set([80, 75, 7, 8]);
 
                 if (!entry.stream) {
-                  _context2.next = 42;
+                  _context5.next = 43;
                   break;
                 }
 
                 zipObject.crc = new Crc32();
                 reader = entry.stream().getReader();
 
-              case 25:
+              case 26:
 
-                _context2.next = 28;
+                _context5.next = 29;
                 return reader.read();
 
-              case 28:
-                it = _context2.sent;
+              case 29:
+                it = _context5.sent;
 
                 if (!it.done) {
-                  _context2.next = 31;
+                  _context5.next = 32;
                   break;
                 }
 
-                return _context2.abrupt("break", 38);
+                return _context5.abrupt("break", 39);
 
-              case 31:
+              case 32:
                 chunk = it.value;
                 zipObject.crc.append(chunk);
                 zipObject.uncompressedLength = JSBI.add(zipObject.uncompressedLength, JSBI.BigInt(chunk.length));
                 zipObject.compressedLength = JSBI.add(zipObject.compressedLength, JSBI.BigInt(chunk.length));
                 ctrl.enqueue(chunk);
-                _context2.next = 25;
+                _context5.next = 26;
                 break;
 
-              case 38:
+              case 39:
                 hdv.setUint32(10, zipObject.crc.get(), true);
                 hdv.setUint32(14, JSBI.toNumber(zipObject.compressedLength), true);
                 hdv.setUint32(18, JSBI.toNumber(zipObject.uncompressedLength), true);
                 footer.set(header.subarray(10, 22), 4);
 
-              case 42:
+              case 43:
                 hdv.setUint16(22, nameBuf.length, true);
                 this.offset = JSBI.add(this.offset, JSBI.add(zipObject.compressedLength, JSBI.BigInt(16)));
                 ctrl.enqueue(footer);
 
-              case 45:
+              case 46:
               case "end":
-                return _context2.stop();
+                return _context5.stop();
             }
           }
         }, _callee, this);
@@ -840,15 +855,15 @@ var ZipTransformer = /*#__PURE__*/function () {
   }, {
     key: "flush",
     value: function flush(ctrl) {
-      var _context3,
+      var _context6,
           _this = this,
-          _context4;
+          _context7;
 
       var length = 0;
       var index = 0;
       var file;
 
-      _forEachInstanceProperty(_context3 = this.filenames).call(_context3, function (fileName) {
+      _forEachInstanceProperty(_context6 = this.filenames).call(_context6, function (fileName) {
         file = _this.files[fileName];
         length += 46 + file.nameBuf.length + file.comment.length;
       });
@@ -856,7 +871,7 @@ var ZipTransformer = /*#__PURE__*/function () {
       var data = new Uint8Array(length + 22);
       var dv = new DataView(data.buffer);
 
-      _forEachInstanceProperty(_context4 = this.filenames).call(_context4, function (fileName) {
+      _forEachInstanceProperty(_context7 = this.filenames).call(_context7, function (fileName) {
         file = _this.files[fileName];
         dv.setUint32(index, 0x504b0102);
         dv.setUint16(index + 4, 0x1400);

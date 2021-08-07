@@ -1,4 +1,3 @@
-/* global globalThis */
 /* eslint-disable no-underscore-dangle */
 /**
  * Conflux
@@ -9,7 +8,7 @@
  */
 // eslint-disable-next-line import/extensions
 import { Inflate } from 'pako';
-import JSBI from './bigint';
+import JSBI from './bigint.js';
 import Crc32 from './crc.js';
 
 const ERR_BAD_FORMAT = 'File format is not recognized.';
@@ -189,11 +188,14 @@ class Entry {
       },
       async pull(ctrl) {
         const v = await this.reader.read();
-        inflator
-          ? !v.done && inflator.push(v.value)
-          : v.done
-          ? onEnd(ctrl)
-          : (ctrl.enqueue(v.value), crc.append(v.value));
+        if (inflator && !v.done) {
+          inflator.push(v.value);
+        } else if (v.done) {
+          onEnd(ctrl);
+        } else {
+          ctrl.enqueue(v.value);
+          crc.append(v.value);
+        }
       },
     });
   }
@@ -223,6 +225,14 @@ class Entry {
   }
 }
 
+/**
+ * Get a BigInt 64 from a DataView
+ *
+ * @param {DataView} view a dataview
+ * @param {number} position the position
+ * @param {boolean} littleEndian whether this uses littleEndian encoding
+ * @returns BigInt
+ */
 function getBigInt64(view, position, littleEndian = false) {
   if ('getBigInt64' in DataView.prototype) {
     return view.getBigInt64(position, littleEndian);
@@ -238,7 +248,7 @@ function getBigInt64(view, position, littleEndian = false) {
 
     if (isNegative) {
       if (carrying) {
-        if (byte != 0x00) {
+        if (byte !== 0x00) {
           byte = ~(byte - 1) & 0xff;
           carrying = false;
         }

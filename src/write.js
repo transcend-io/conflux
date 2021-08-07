@@ -8,38 +8,38 @@
  */
 // eslint-disable-next-line import/extensions
 import { TransformStream as PonyfillTransformStream } from 'web-streams-polyfill/ponyfill';
-import JSBI from './bigint';
+import JSBI from './bigint.js';
 import Crc32 from './crc.js';
 
 const encoder = new TextEncoder();
 
 class ZipTransformer {
   constructor() {
+    /* The files zipped */
     this.files = Object.create(null);
-    this.filenames = [];
+    /* The current position of the zipped output stream, in bytes */
     this.offset = JSBI.BigInt(0);
   }
 
   /**
-   * [transform description]
+   * Transforms a stream of files into one zipped file
    *
    * @param  {File}  entry [description]
    * @param  {ReadableStreamDefaultController}  ctrl
    * @return {Promise}       [description]
    */
   async transform(entry, ctrl) {
-    let name = entry.name.trim();
-    const date = new Date(
-      typeof entry.lastModified === 'undefined'
-        ? Date.now()
-        : entry.lastModified,
-    );
+    // Set the File name, ensuring that if it's a directory, it ends with `/`
+    const name =
+      entry.directory && !entry.name.trim().endsWith('/')
+        ? `${entry.name.trim()}/`
+        : entry.name.trim();
 
-    if (entry.directory && !name.endsWith('/')) name += '/';
+    // Abort if this a file with this name already exists
     if (this.files[name]) ctrl.abort(new Error('File already exists.'));
 
+    // TextEncode the name
     const nameBuf = encoder.encode(name);
-    this.filenames.push(name);
 
     this.files[name] = {
       directory: !!entry.directory,
@@ -52,8 +52,16 @@ class ZipTransformer {
     };
 
     const zipObject = this.files[name];
-
     const { header } = zipObject;
+
+    // Set the date, with fallback to current date
+    const date = new Date(
+      typeof entry.lastModified === 'undefined'
+        ? Date.now()
+        : entry.lastModified,
+    );
+
+    // The File header DataView
     const hdv = new DataView(header.buffer);
     const data = new Uint8Array(30 + nameBuf.length);
 
@@ -125,7 +133,7 @@ class ZipTransformer {
     let index = 0;
     let file;
 
-    this.filenames.forEach((fileName) => {
+    Object.keys(this.files).forEach((fileName) => {
       file = this.files[fileName];
       length += 46 + file.nameBuf.length + file.comment.length;
     });
@@ -133,7 +141,7 @@ class ZipTransformer {
     const data = new Uint8Array(length + 22);
     const dv = new DataView(data.buffer);
 
-    this.filenames.forEach((fileName) => {
+    Object.keys(this.files).forEach((fileName) => {
       file = this.files[fileName];
       dv.setUint32(index, 0x504b0102);
       dv.setUint16(index + 4, 0x1400);
@@ -147,25 +155,24 @@ class ZipTransformer {
     });
 
     dv.setUint32(index, 0x504b0506);
-    dv.setUint16(index + 8, this.filenames.length, true);
-    dv.setUint16(index + 10, this.filenames.length, true);
+    dv.setUint16(index + 8, Object.keys(this.files).length, true);
+    dv.setUint16(index + 10, Object.keys(this.files).length, true);
     dv.setUint32(index + 12, length, true);
     dv.setUint32(index + 16, JSBI.toNumber(this.offset), true);
     ctrl.enqueue(data);
 
     // cleanup
     this.files = Object.create(null);
-    this.filenames = [];
     this.offset = 0;
   }
 }
 
-const ts =
+const ModernTransformStream =
   globalThis.TransformStream ||
   globalThis.WebStreamsPolyfill?.TransformStream ||
   PonyfillTransformStream;
 
-class Writer extends ts {
+class Writer extends ModernTransformStream {
   constructor() {
     super(new ZipTransformer());
   }
