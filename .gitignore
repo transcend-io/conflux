@@ -91,3 +91,6 @@ typings/
 
 # Secrets
 .secret
+
+# Distribution files
+dist
