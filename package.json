@@ -61,10 +61,8 @@
   },
   "homepage": "https://github.com/transcend-io/conflux#readme",
   "resolutions": {
+    "node-fetch": "2.6.7",
     "follow-redirects": "1.14.8",
-    "ua-parser-js": "0.7.24",
-    "engine.io": "4.0.0",
-    "log4js": "6.4.0",
     "path-parse": "1.0.7",
     "glob-parent": "5.1.2"
   },
