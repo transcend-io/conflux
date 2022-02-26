@@ -71,6 +71,8 @@
     "@rollup/plugin-commonjs": "^14.0.0",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^8.4.0",
+    "@yarnpkg/pnpify": "^3.1.1",
+    "@yarnpkg/sdks": "^2.6.0",
     "buffer": "^5.6.0",
     "codecov": "^3.6.5",
     "eslint": "^7.6.0",
