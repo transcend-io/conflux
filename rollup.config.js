@@ -18,7 +18,7 @@ const babelDefaults = {
     ],
   ],
   exclude: ['node_modules/**'],
-}
+};
 
 export default [
   // browser-friendly UMD build
@@ -52,8 +52,6 @@ export default [
       // { file: pkg.main, format: 'cjs' }, // don't need a Node import yet
       { file: pkg.module, format: 'es' },
     ],
-    plugins: [
-      babel(babelDefaults),
-    ],
+    plugins: [babel(babelDefaults)],
   },
 ];

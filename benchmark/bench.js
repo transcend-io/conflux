@@ -1,12 +1,5 @@
-const {
-  WritableStream,
-  Response,
-  Benchmark,
-  Blob,
-  JSZip,
-  zip,
-  conflux,
-} = window;
+const { WritableStream, Response, Benchmark, Blob, JSZip, zip, conflux } =
+  window;
 
 zip.useWebWorkers = false;
 
