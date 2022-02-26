@@ -162,7 +162,7 @@ const mod = () =>
           let d;
           const e = new Uint8Array(f);
           let c = 0;
-          for (d = a.length; ++b < d; ) {
+          for (d = a.length; ++b < d;) {
             let g = h[a.charCodeAt(b)];
             let k = h[a.charCodeAt(++b)];
             e[c++] = (g << 2) | (k >> 4);

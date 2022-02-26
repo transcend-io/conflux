@@ -32,7 +32,7 @@ class Entry {
     this._fileLike = fileLike;
     this._extraFields = {};
 
-    for (let i = 46 + this.filenameLength; i < dv.byteLength; ) {
+    for (let i = 46 + this.filenameLength; i < dv.byteLength;) {
       const id = dv.getUint16(i, true);
       const len = dv.getUint16(i + 2, true);
       const start = dv.byteOffset + i + 4;
