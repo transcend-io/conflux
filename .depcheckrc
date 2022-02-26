@@ -1,0 +1,1 @@
+ignores: ["@babel/plugin-transform-runtime", "@yarnpkg/pnpify", "@yarnpkg/sdks", "buffer", "depcheck", "karma-browserstack-launcher", "karma-chrome-launcher", "karma-coverage", "karma-firefox-launcher", "karma-rollup-preprocessor", "karma-tap", "live-server"]

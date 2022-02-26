@@ -1,5 +1,5 @@
 {
-  "README":"Used with https://github.com/bencmbrook/compat",
+  "README": "Used with https://github.com/bencmbrook/compat",
   "target": ["./dist/conflux.umd.min.js"],
   "jsEnvs": [
     "ie10",

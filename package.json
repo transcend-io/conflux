@@ -15,8 +15,7 @@
     "report-coverage": "codecov",
     "rebuild-fixtures": "node test/build.js",
     "####### Build #######": "",
-    "build": "rollup -c",
-    "build:markdown": "markdown-toc -i --bullets '—' README.md && sed -i -e 's/—/-/g' README.md && rm -f README.md-e"
+    "build": "rollup -c"
   },
   "repository": {
     "type": "git",
@@ -62,7 +61,6 @@
   "devDependencies": {
     "@babel/core": "^7.8.6",
     "@babel/eslint-parser": "^7.14.7",
-    "@babel/eslint-plugin": "^7.14.5",
     "@babel/plugin-proposal-optional-chaining": "^7.11.0",
     "@babel/plugin-transform-classes": "^7.10.4",
     "@babel/plugin-transform-runtime": "^7.11.0",
@@ -75,6 +73,7 @@
     "@yarnpkg/sdks": "^2.6.0",
     "buffer": "^5.6.0",
     "codecov": "^3.6.5",
+    "depcheck": "^1.4.3",
     "eslint": "^7.6.0",
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-config-prettier": "^6.10.0",
@@ -88,7 +87,6 @@
     "karma-rollup-preprocessor": "^7.0.5",
     "karma-tap": "^4.2.0",
     "live-server": "^1.2.1",
-    "markdown-toc": "^1.2.0",
     "prettier": "^2.0.5",
     "rollup": "^2.23.0",
     "rollup-plugin-node-polyfills": "^0.2.1",

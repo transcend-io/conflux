@@ -1,3 +1,26 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+## Table of Contents
+
+- [Conflux](#conflux)
+  - [Blazing Fast](#blazing-fast)
+  - [Compatibility](#compatibility)
+  - [Examples](#examples)
+  - [Usage](#usage)
+    - [Importing Conflux](#importing-conflux)
+      - [Package Manager](#package-manager)
+      - [CDN](#cdn)
+    - [Creating a ZIP](#creating-a-zip)
+      - [Example using `ReadableStream#pipeThrough`](#example-using-readablestreampipethrough)
+      - [Example using `writer.write`](#example-using-writerwrite)
+      - [Incorporating other streams](#incorporating-other-streams)
+    - [Reading ZIP files](#reading-zip-files)
+  - [Supporting Firefox](#supporting-firefox)
+  - [License](#license)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 <p align="center">
   <img alt="Conflux by Transcend" src="https://user-images.githubusercontent.com/7354176/61584253-73ecfb00-aaf9-11e9-91a5-a62e5ba6efc6.png"/>
 </p>
