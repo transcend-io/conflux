@@ -1,14 +1,14 @@
 import test from 'tape';
 import { Writer, Reader } from '../src/index.js';
 
-function streamFrom(chunks) {
-  return new ReadableStream({
-    start(ctrl) {
-      chunks.forEach((chunk) => ctrl.enqueue(chunk));
-      ctrl.close();
-    },
-  });
-}
+// function streamFrom(chunks) {
+//   return new ReadableStream({
+//     start(ctrl) {
+//       chunks.forEach((chunk) => ctrl.enqueue(chunk));
+//       ctrl.close();
+//     },
+//   });
+// }
 
 const date = +new Date('2012-02-05T15:40:48Z');
 const dateMS = +new Date('2012-02-05T15:40:48.123Z');
@@ -16,7 +16,7 @@ const helloWorld = new File(['Hello World\n'], 'Hello.txt', {
   lastModified: dateMS,
 });
 const fileLikeUtf8 = {
-  comment: `I'm a entry comment with utf8`,
+  comment: "I'm a entry comment with utf8",
   stream: () => new Response('€15\n').body,
   name: '€15.txt',
   lastModified: new Date('2020-01-27T16:55:59'),
@@ -81,8 +81,8 @@ test('Writing - All in one big test', async (t) => {
   t.equal(entry.name, '€15.txt', 'Name with utf8 chars works');
   t.equal(
     entry.comment,
-    `I'm a entry comment with utf8`,
-    `Entry should have a comment`,
+    "I'm a entry comment with utf8",
+    'Entry should have a comment',
   );
   t.equal(await entry.text(), '€15\n', 'Text should be the same');
   t.equal(entry.filenameLength, 9, '€ takes up 3 bytes');

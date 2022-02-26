@@ -1,3 +1,4 @@
+/* eslint-disable no-var, no-unused-expressions, no-restricted-globals,vars-on-top,prefer-destructuring,block-scoped-var,no-shadow */
 const mod = () =>
   ((types, b64) => ({
     replacer(key) {
@@ -156,6 +157,7 @@ const mod = () =>
       return {
         decode(a) {
           let b = a.length % 4;
+          // eslint-disable-next-line no-param-reassign
           b && (a += Array(5 - b).join('='));
           b = -1;
           const f = new ArrayBuffer((a.length / 4) * 3);
@@ -207,3 +209,4 @@ const mod = () =>
 
 // exports.default = mod;
 export default mod; // TODO: address the Node import issue. This will break when running "yarn rebuild-fixtures"
+/* eslint-enable no-var, no-unused-expressions,no-restricted-globals,vars-on-top,prefer-destructuring,block-scoped-var,no-shadow */

@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 class Crc32 {
   constructor() {
     this.crc = -1;
@@ -29,3 +30,4 @@ Crc32.prototype.table = ((table, i, j, t) => {
 })([], 0, 0, 0);
 
 export default Crc32;
+/* eslint-enable no-param-reassign */
