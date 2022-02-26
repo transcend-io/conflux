@@ -1,5 +1,5 @@
 // Karma configuration
-const getGlobalConfig = require('./karma.global');
+const getGlobalConfig = require('./karma.global.js');
 
 module.exports = (config) => {
   // TODO add more browsers. this util is useful:

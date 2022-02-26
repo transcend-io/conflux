@@ -20,6 +20,7 @@ module.exports = {
     '@typescript-eslint/indent': 0,
     'object-curly-newline': 0,
     'template-curly-spacing': 0,
+    'space-in-parens': 0,
     'newline-per-chained-call': 0,
     'generator-star-spacing': 0,
     'computed-property-spacing': 0,

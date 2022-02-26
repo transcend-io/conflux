@@ -1,14 +1,14 @@
 import test from 'tape';
 import { Writer, Reader } from '../src/index.js';
 
-function streamFrom(chunks) {
-  return new ReadableStream({
-    start(ctrl) {
-      chunks.forEach((chunk) => ctrl.enqueue(chunk));
-      ctrl.close();
-    },
-  });
-}
+// function streamFrom(chunks) {
+//   return new ReadableStream({
+//     start(ctrl) {
+//       chunks.forEach((chunk) => ctrl.enqueue(chunk));
+//       ctrl.close();
+//     },
+//   });
+// }
 
 const date = +new Date('2012-02-05T15:40:48Z');
 const dateMS = +new Date('2012-02-05T15:40:48.123Z');
