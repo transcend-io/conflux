@@ -1,6 +1,6 @@
 {
   "name": "@transcend-io/conflux",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Build zip files out of readable streams in the browser",
   "main": "dist/conflux.umd.min.js",
   "jsdelivr": "dist/conflux.umd.min.js",
@@ -49,10 +49,8 @@
     }
   ],
   "files": [
-    "src/index.js",
-    "src/write.js",
-    "src/read.js",
-    "src/crc.js"
+    "dist/**/*",
+    "src/**/*"
   ],
   "license": "MIT",
   "author": "@transcend-io",
