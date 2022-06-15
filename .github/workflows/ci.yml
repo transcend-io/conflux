@@ -62,6 +62,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: build-artifact
+          path: dist
       - name: Configure NPM authentication
         run: |
           yarn config set npmAlwaysAuth true
@@ -86,6 +87,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: build-artifact
+          path: dist
       - name: Configure Github Packages authentication
         run: |
           yarn config set npmAlwaysAuth true
