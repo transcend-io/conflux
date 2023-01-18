@@ -1,6 +1,6 @@
 {
   "name": "@transcend-io/conflux",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "description": "Build zip files out of readable streams in the browser",
   "main": "dist/conflux.umd.min.js",
   "jsdelivr": "dist/conflux.umd.min.js",
@@ -83,6 +83,7 @@
     "eslint": "^8.17.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "2.26.0",
+    "git-rev-sync": "^3.0.2",
     "karma": "^6.3.20",
     "karma-browserstack-launcher": "^1.6.0",
     "karma-chrome-launcher": "^3.1.1",
@@ -102,5 +103,6 @@
     "jsbi": "^3.2.5",
     "pako": "^1.0.11",
     "web-streams-polyfill": "^3.2.1"
-  }
+  },
+  "packageManager": "yarn@3.3.1"
 }

@@ -1,37 +1,41 @@
 // Karma configuration
+// eslint-disable-next-line import/no-extraneous-dependencies
+const { short } = require('git-rev-sync');
 const getGlobalConfig = require('./karma.global.js');
+const packageJson = require('./package.json');
 
 module.exports = (config) => {
-  // TODO add more browsers. this util is useful:
-  // https://www.browserstack.com/automate/capabilities
+  /**
+   * @see https://www.browserstack.com/automate/capabilities
+   */
   const customLaunchers = {
     bs_chrome_mac: {
       base: 'BrowserStack',
       browser: 'Chrome',
-      browser_version: '78.0',
+      browser_version: '104.0',
       os: 'OS X',
-      os_version: 'Catalina',
+      os_version: 'Big Sur',
     },
     bs_safari_mac: {
       base: 'BrowserStack',
       browser: 'Safari',
-      browser_version: '13.1',
+      browser_version: '15.6',
       os: 'OS X',
-      os_version: 'Catalina',
+      os_version: 'Monterey',
     },
     bs_firefox_pc: {
       base: 'BrowserStack',
       browser: 'Firefox',
-      browser_version: '71.0',
+      browser_version: '102.0',
       os: 'Windows',
       os_version: '10',
     },
     bs_edge_pc: {
       base: 'BrowserStack',
       browser: 'Edge',
-      browser_version: '80.0',
+      browser_version: '108.0',
       os: 'Windows',
-      os_version: '10',
+      os_version: '11',
     },
   };
 
@@ -45,7 +49,9 @@ module.exports = (config) => {
       username: 'benjaminbrook3',
       project: 'Conflux',
       video: false,
-      build: process.env.TRAVIS_BUILD_NUMBER, // process.env.CIRCLE_BUILD_NUM
+      build: `conflux@${packageJson.version} - ${short()} - ${
+        process.env.GITHUB_RUN_ID ? `CI: ${process.env.GITHUB_RUN_ID}` : 'Local'
+      }`,
     },
 
     // define browsers
