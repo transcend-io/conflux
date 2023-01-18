@@ -1,4 +1,6 @@
 // Karma configuration
+// eslint-disable-next-line import/no-extraneous-dependencies
+const { short } = require('git-rev-sync');
 const getGlobalConfig = require('./karma.global.js');
 const packageJson = require('./package.json');
 
@@ -47,10 +49,8 @@ module.exports = (config) => {
       username: 'benjaminbrook3',
       project: 'Conflux',
       video: false,
-      build: `Karma - conflux@${packageJson.version}${
-        process.env.GITHUB_RUN_ID
-          ? ` - GitHub Run ID: ${process.env.GITHUB_RUN_ID}`
-          : ''
+      build: `conflux@${packageJson.version} - ${short()} - ${
+        process.env.GITHUB_RUN_ID ? `CI: ${process.env.GITHUB_RUN_ID}` : 'Local'
       }`,
     },
 
