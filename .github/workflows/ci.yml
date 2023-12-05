@@ -30,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: ./.github/commands/dependencies/install_yarn_deps
-      - run: yarn pnpify depcheck
+      - run: yarn depcheck
 
   run-pre-commits:
     runs-on: ubuntu-latest
@@ -40,9 +40,7 @@ jobs:
           fetch-depth: 100 # need the history to do a changed files check below (source, origin)
       - uses: actions/setup-python@v2
       - uses: ./.github/commands/dependencies/install_yarn_deps
-      - uses: pre-commit/action@v2.0.2
-        with:
-          extra_args: --source ${{ github.event.pull_request.base.sha || 'HEAD~1' }} --origin ${{ github.event.pull_request.head.sha || 'HEAD' }}
+      - uses: pre-commit/action@v3.0.0
 
   build-to-npm:
     if: github.ref == 'refs/heads/main'
