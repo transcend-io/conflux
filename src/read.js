@@ -69,6 +69,10 @@ class Entry {
     return this.dataView.getUint32(20, true);
   }
 
+  get uncompressedSize() {
+    return this.dataView.getUint32(24, true);
+  }
+
   get filenameLength() {
     return this.dataView.getUint16(28, true);
   }
@@ -98,11 +102,28 @@ class Entry {
   }
 
   get offset() {
-    return this.dataView.getUint32(42, true);
+    if (this.zip64) {
+      // Read the ZIP64 offset from the extra fields
+      // The extra field 0x0001 is used for ZIP64 information
+      const extraField = this._extraFields[0x0001];
+      if (extraField) {
+        // The offset is the third field in the ZIP64 extra fields
+        return Number(getBigInt64(
+          extraField,
+          (this.compressedSize === MAX_VALUE_32BITS ? 8 : 0) + (this.uncompressedSize === MAX_VALUE_32BITS ? 8 : 0),
+          true));
+      } else {
+        throw new Error('ZIP64 extra field missing');
+      }
+    } else {
+      return this.dataView.getUint32(42, true);
+    }
   }
 
   get zip64() {
-    return this.dataView.getUint32(24, true) === MAX_VALUE_32BITS;
+    return this.compressedSize === MAX_VALUE_32BITS
+      || this.uncompressedSize === MAX_VALUE_32BITS
+      || this.dataView.getUint32(42, true) === MAX_VALUE_32BITS;
   }
 
   get comment() {
@@ -150,8 +171,8 @@ class Entry {
   }
 
   get size() {
-    const size = this.dataView.getUint32(24, true);
-    return size === MAX_VALUE_32BITS ? this._extraFields[1].getUint8(0) : size;
+    const size = this.uncompressedSize;
+    return size === MAX_VALUE_32BITS ? Number(getBigInt64(this._extraFields[0x0001], 0)) : size;
   }
 
   stream() {
