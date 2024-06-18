@@ -108,10 +108,8 @@ class Entry {
       const extraField = this._extraFields[0x0001];
       if (extraField) {
         // The offset is the third field in the ZIP64 extra fields
-        return Number(getBigInt64(
-          extraField,
-          (this.compressedSize === MAX_VALUE_32BITS ? 8 : 0) + (this.uncompressedSize === MAX_VALUE_32BITS ? 8 : 0),
-          true));
+        const offset = (this.compressedSize === MAX_VALUE_32BITS ? 8 : 0) + (this.uncompressedSize === MAX_VALUE_32BITS ? 8 : 0);
+        return JSBI.toNumber(getBigInt64(extraField, offset, true));
       } else {
         throw new Error('ZIP64 extra field missing');
       }
@@ -172,7 +170,7 @@ class Entry {
 
   get size() {
     const size = this.uncompressedSize;
-    return size === MAX_VALUE_32BITS ? Number(getBigInt64(this._extraFields[0x0001], 0)) : size;
+    return size === MAX_VALUE_32BITS ? JSBI.toNumber(getBigInt64(this._extraFields[0x0001], 0)) : size;
   }
 
   stream() {
