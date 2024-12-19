@@ -1,6 +1,6 @@
 {
   "name": "@transcend-io/conflux",
-  "version": "4.1.1",
+  "version": "4.1.2",
   "description": "Build zip files out of readable streams in the browser",
   "main": "dist/conflux.umd.min.js",
   "jsdelivr": "dist/conflux.umd.min.js",
@@ -74,8 +74,8 @@
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-json": "^6.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
-    "@yarnpkg/pnpify": "^4.0.1",
-    "@yarnpkg/sdks": "^3.1.0",
+    "@yarnpkg/pnpify": "^4.1.3",
+    "@yarnpkg/sdks": "^3.2.0",
     "buffer": "^6.0.3",
     "codecov": "^3.8.3",
     "depcheck": "^1.4.7",
@@ -103,5 +103,5 @@
     "pako": "^2.1.0",
     "web-streams-polyfill": "^3.2.1"
   },
-  "packageManager": "yarn@4.0.2"
+  "packageManager": "yarn@4.5.3"
 }
