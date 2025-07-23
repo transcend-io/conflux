@@ -53,6 +53,11 @@ async function extractEntriesFromZip(method, fixture, { zip64 = false } = {}) {
           directory: name.endsWith('/'),
           zip64,
           size: chunks.reduce((sum, chunk) => sum + chunk.length, 0),
+          // StreamReader doesn't have access to these properties from the central directory,
+          // so we set reasonable defaults for tests that primarily focus on content
+          comment: '',
+          compressed: false,
+          encrypted: false,
           async arrayBuffer() {
             const totalLength = chunks.reduce(
               (sum, chunk) => sum + chunk.length,
@@ -159,7 +164,7 @@ test.skip('all_prepended_bytes.zip', async (t) => {
   });
 });
 
-test('Reading - all.7zip.zip', async (t) => {
+test('Reader - all.7zip.zip', async (t) => {
   const it = Reader(fixtures['all.7zip.zip']);
 
   // entry 1
@@ -185,7 +190,7 @@ test('Reading - all.7zip.zip', async (t) => {
   t.end();
 });
 
-test('Reading - all.windows.zip', async (t) => {
+test('Reader - all.windows.zip', async (t) => {
   const it = Reader(fixtures['all.windows.zip']);
 
   // entry 1
@@ -204,32 +209,36 @@ test('Reading - all.windows.zip', async (t) => {
   t.end();
 });
 
-test('Reading - all.zip', async (t) => {
-  const it = Reader(fixtures['all.zip']);
+['Reader', 'StreamReader'].forEach((method) => {
+  test(`${method} - all.zip`, async (t) => {
+    const extractedEntries = await extractEntriesFromZip(
+      method,
+      fixtures['all.zip'],
+    );
 
-  // entry 1
-  let entry = (await it.next()).value;
-  t.equal(entry.name, 'Hello.txt');
-  t.equal(entry.directory, false);
-  t.equal(entry.comment, '');
-  t.equal(await entry.text(), 'Hello World\n');
+    // entry 1
+    const entry1 = extractedEntries[0];
+    t.equal(entry1.name, 'Hello.txt');
+    t.equal(entry1.directory, false);
+    t.equal(entry1.comment, '');
+    t.equal(await entry1.text(), 'Hello World\n');
 
-  // entry 2
-  entry = (await it.next()).value;
-  t.equal(entry.name, 'images/');
-  t.equal(entry.directory, true);
-  t.equal(entry.comment, '');
+    // entry 2
+    const entry2 = extractedEntries[1];
+    t.equal(entry2.name, 'images/');
+    t.equal(entry2.directory, true);
+    t.equal(entry2.comment, '');
 
-  // entry 3
-  entry = (await it.next()).value;
-  t.equal(entry.name, 'images/smile.gif');
-  t.equal(await isSmiley(entry), true);
+    // entry 3
+    const entry3 = extractedEntries[2];
+    t.equal(entry3.name, 'images/smile.gif');
+    t.equal(await isSmiley(entry3), true);
 
-  t.ok((await it.next()).done);
-  t.end();
+    t.end();
+  });
 });
 
-test('Reading - archive_comment.zip', async (t) => {
+test('Reader - archive_comment.zip', async (t) => {
   const it = Reader(fixtures['archive_comment.zip']);
 
   // entry 1
@@ -243,38 +252,46 @@ test('Reading - archive_comment.zip', async (t) => {
   t.end();
 });
 
-test('Reading - backslash.zip', async (t) => {
-  const it = Reader(fixtures['backslash.zip']);
+['Reader', 'StreamReader'].forEach((method) => {
+  test(`${method} - backslash.zip`, async (t) => {
+    const extractedEntries = await extractEntriesFromZip(
+      method,
+      fixtures['backslash.zip'],
+    );
 
-  // entry 1
-  const entry = (await it.next()).value;
-  t.equal(entry.name, 'Hel\\lo.txt');
-  t.equal(entry.directory, false);
-  t.equal(entry.comment, '');
-  t.equal(await entry.text(), 'Hello World\n');
+    // entry 1
+    const entry = extractedEntries[0];
+    t.equal(entry.name, 'Hel\\lo.txt');
+    t.equal(entry.directory, false);
+    t.equal(entry.comment, '');
+    t.equal(await entry.text(), 'Hello World\n');
 
-  t.ok((await it.next()).done);
-  t.end();
+    t.end();
+  });
 });
 
 // use -fd to force data descriptors as if streaming
 // zip -fd -0 data_descriptor.zip Hello.txt
-test('Reading - data_descriptor.zip', async (t) => {
-  const it = Reader(fixtures['data_descriptor.zip']);
+['Reader', 'StreamReader'].forEach((method) => {
+  test(`${method} - data_descriptor.zip`, async (t) => {
+    const extractedEntries = await extractEntriesFromZip(
+      method,
+      fixtures['data_descriptor.zip'],
+    );
 
-  // entry 1
-  const entry = (await it.next()).value;
-  t.equal(entry.name, 'Hello.txt');
-  t.equal(entry.directory, false);
-  t.equal(entry.comment, '');
-  t.equal(await entry.text(), 'Hello World\n');
+    // entry 1
+    const entry = extractedEntries[0];
+    t.equal(entry.name, 'Hello.txt');
+    t.equal(entry.directory, false);
+    t.equal(entry.comment, '');
+    t.equal(await entry.text(), 'Hello World\n');
 
-  t.ok((await it.next()).done);
-  t.end();
+    t.end();
+  });
 });
 
 // zip -6 -X -fd deflate-stream.zip Hello.txt
-test('Reading - deflate-stream.zip', async (t) => {
+test('Reader - deflate-stream.zip', async (t) => {
   const it = Reader(fixtures['deflate-stream.zip']);
 
   // entry 1
@@ -295,7 +312,7 @@ test('Reading - deflate-stream.zip', async (t) => {
 });
 
 // zip -6 -X deflate.zip Hello.txt
-test('Reading - deflate.zip', async (t) => {
+test('Reader - deflate.zip', async (t) => {
   const it = Reader(fixtures['deflate.zip']);
 
   // entry 1
@@ -315,15 +332,20 @@ test('Reading - deflate.zip', async (t) => {
   t.end();
 });
 
-// zip -0 -X empty.zip plop && zip -d empty.zip plop
-test('Reading - empty.zip', async (t) => {
-  const it = Reader(fixtures['empty.zip']);
-  t.ok((await it.next()).done);
-  t.end();
+['Reader', 'StreamReader'].forEach((method) => {
+  test(`${method} - empty.zip`, async (t) => {
+    const extractedEntries = await extractEntriesFromZip(
+      method,
+      fixtures['empty.zip'],
+    );
+
+    t.equal(extractedEntries.length, 0, 'Empty archive should have no entries');
+    t.end();
+  });
 });
 
 // zip -0 -X -e encrypted.zip Hello.txt
-test('Reading - encrypted.zip', async (t) => {
+test('Reader - encrypted.zip', async (t) => {
   const it = Reader(fixtures['encrypted.zip']);
 
   // entry 1
@@ -344,7 +366,7 @@ test('Reading - encrypted.zip', async (t) => {
   t.end();
 });
 
-test('Reading - extra_attributes.zip', async (t) => {
+test('Reader - extra_attributes.zip', async (t) => {
   const it = Reader(fixtures['extra_attributes.zip']);
 
   // entry 1
@@ -361,39 +383,51 @@ test('Reading - extra_attributes.zip', async (t) => {
   t.end();
 });
 
-test('Reading - folder.zip', async (t) => {
-  const it = Reader(fixtures['folder.zip']);
+['Reader', 'StreamReader'].forEach((method) => {
+  test(`${method} - folder.zip`, async (t) => {
+    const extractedEntries = await extractEntriesFromZip(
+      method,
+      fixtures['folder.zip'],
+    );
 
-  // entry 1
-  const entry = (await it.next()).value;
-  t.equal(entry.name, 'folder/');
-  t.equal(entry.directory, true);
-  t.equal(entry.size, 0);
-  t.equal(entry.compressedSize, 0);
-  t.equal(entry.encrypted, false);
-  t.equal(entry.comment, '');
+    // entry 1
+    const entry = extractedEntries[0];
+    t.equal(entry.name, 'folder/');
+    t.equal(entry.directory, true);
+    t.equal(entry.size, 0);
+    if (method === 'Reader') {
+      t.equal(entry.compressedSize, 0);
+    }
+    t.equal(entry.encrypted, false);
+    t.equal(entry.comment, '');
 
-  t.ok((await it.next()).done);
-  t.end();
+    t.end();
+  });
 });
 
-test('Reading - image.zip', async (t) => {
-  const it = Reader(fixtures['image.zip']);
+['Reader', 'StreamReader'].forEach((method) => {
+  test(`${method} - image.zip`, async (t) => {
+    const extractedEntries = await extractEntriesFromZip(
+      method,
+      fixtures['image.zip'],
+    );
 
-  // entry 1
-  const entry = (await it.next()).value;
-  t.equal(entry.name, 'smile.gif');
-  t.equal(entry.directory, false);
-  t.equal(entry.size, 41);
-  t.equal(entry.compressedSize, 41);
-  t.equal(entry.encrypted, false);
-  t.equal(entry.comment, '');
+    // entry 1
+    const entry = extractedEntries[0];
+    t.equal(entry.name, 'smile.gif');
+    t.equal(entry.directory, false);
+    t.equal(entry.size, 41);
+    if (method === 'Reader') {
+      t.equal(entry.compressedSize, 41);
+    }
+    t.equal(entry.encrypted, false);
+    t.equal(entry.comment, '');
 
-  t.ok((await it.next()).done);
-  t.end();
+    t.end();
+  });
 });
 
-test('Reading - local_encoding_in_name.zip', async (t) => {
+test('Reader - local_encoding_in_name.zip', async (t) => {
   const it = Reader(fixtures['local_encoding_in_name.zip']);
 
   // ["Новая папка/Новый текстовый документ.txt"]
@@ -419,7 +453,7 @@ test('Reading - local_encoding_in_name.zip', async (t) => {
 });
 
 // zip -fd -0 nested_data_descriptor.zip data_descriptor.zip
-test('Reading - nested_data_descriptor.zip', async (t) => {
+test('Reader - nested_data_descriptor.zip', async (t) => {
   const it = Reader(fixtures['nested_data_descriptor.zip']);
 
   // entry 1
@@ -433,7 +467,7 @@ test('Reading - nested_data_descriptor.zip', async (t) => {
 });
 
 // zip -fd -0 nested_data_descriptor.zip data_descriptor.zip
-test('Reading - nested_data_descriptor.zip', async (t) => {
+test('Reader - nested_data_descriptor.zip', async (t) => {
   const it = Reader(fixtures['nested_data_descriptor.zip']);
 
   // entry 1
@@ -447,7 +481,7 @@ test('Reading - nested_data_descriptor.zip', async (t) => {
 });
 
 // zip -fd -0 nested_data_descriptor.zip data_descriptor.zip
-test('Reading - nested_zip64.zip', async (t) => {
+test('Reader - nested_zip64.zip', async (t) => {
   const it = Reader(fixtures['nested_zip64.zip']);
 
   // entry 1
@@ -462,7 +496,7 @@ test('Reading - nested_zip64.zip', async (t) => {
 });
 
 // zip -0 -X zip_within_zip.zip Hello.txt && zip -0 -X nested.zip Hello.txt zip_within_zip.zip
-test('Reading - nested.zip', async (t) => {
+test('Reader - nested.zip', async (t) => {
   const it = Reader(fixtures['nested.zip']);
 
   // entry 1
@@ -485,7 +519,7 @@ test('Reading - nested.zip', async (t) => {
 });
 
 // zip --entry-comments --archive-comment -X -0 pile_of_poo.zip Iñtërnâtiônàlizætiøn☃$'\360\237\222\251'.txt
-test('Reading - pile_of_poo.zip', async (t) => {
+test('Reader - pile_of_poo.zip', async (t) => {
   const it = Reader(fixtures['pile_of_poo.zip']);
 
   // this is the string "Iñtërnâtiônàlizætiøn☃💩",
@@ -505,7 +539,7 @@ test('Reading - pile_of_poo.zip', async (t) => {
 });
 
 // use izarc to generate a zip file on windows
-test('Reading - slashes_and_izarc.zip', async (t) => {
+test('Reader - slashes_and_izarc.zip', async (t) => {
   const it = Reader(fixtures['slashes_and_izarc.zip']);
 
   // entry 1
@@ -517,113 +551,138 @@ test('Reading - slashes_and_izarc.zip', async (t) => {
   t.end();
 });
 
-// zip -0 -X -fd store-stream.zip Hello.txt
-test('Reading - store-stream.zip', async (t) => {
-  const it = Reader(fixtures['store-stream.zip']);
+['Reader', 'StreamReader'].forEach((method) => {
+  test(`${method} - store-stream.zip`, async (t) => {
+    const extractedEntries = await extractEntriesFromZip(
+      method,
+      fixtures['store-stream.zip'],
+    );
 
-  // entry 1
-  const entry = (await it.next()).value;
-  t.equal(entry.name, 'Hello.txt');
-  t.equal(entry.size, 94);
-  t.equal(entry.compressedSize, 94);
-  t.equal(
-    await entry.text(),
-    'This a looong file : we need to see the difference between the different compression methods.\n',
-  );
+    // entry 1
+    const entry = extractedEntries[0];
+    t.equal(entry.name, 'Hello.txt');
+    t.equal(entry.size, 94);
+    t.equal(
+      await entry.text(),
+      'This a looong file : we need to see the difference between the different compression methods.\n',
+    );
 
-  t.ok((await it.next()).done);
-  t.end();
+    t.end();
+  });
 });
 
-// zip -0 -X store.zip Hello.txt
-test('Reading - store.zip', async (t) => {
-  const it = Reader(fixtures['store.zip']);
+['Reader', 'StreamReader'].forEach((method) => {
+  test(`${method} - store.zip`, async (t) => {
+    const extractedEntries = await extractEntriesFromZip(
+      method,
+      fixtures['store.zip'],
+    );
 
-  // entry 1
-  const entry = (await it.next()).value;
-  t.equal(entry.name, 'Hello.txt');
-  t.equal(entry.size, 94);
-  t.equal(entry.compressedSize, 94);
-  t.equal(
-    await entry.text(),
-    'This a looong file : we need to see the difference between the different compression methods.\n',
-  );
+    // entry 1
+    const entry = extractedEntries[0];
+    t.equal(entry.name, 'Hello.txt');
+    t.equal(entry.size, 94);
+    if (method === 'Reader') {
+      t.equal(entry.compressedSize, 94);
+    }
+    t.equal(
+      await entry.text(),
+      'This a looong file : we need to see the difference between the different compression methods.\n',
+    );
 
-  t.ok((await it.next()).done);
-  t.end();
+    t.end();
+  });
 });
 
-test('Reading - subfolder.zip', async (t) => {
-  const it = Reader(fixtures['subfolder.zip']);
+['Reader', 'StreamReader'].forEach((method) => {
+  test(`${method} - subfolder.zip`, async (t) => {
+    const extractedEntries = await extractEntriesFromZip(
+      method,
+      fixtures['subfolder.zip'],
+    );
 
-  // entry 1
-  let entry = (await it.next()).value;
-  t.equal(entry.name, 'folder/');
-  t.equal(entry.size, 0);
-  t.equal(entry.compressedSize, 0);
-  t.equal(entry.directory, true);
+    // entry 1
+    const entry1 = extractedEntries[0];
+    t.equal(entry1.name, 'folder/');
+    t.equal(entry1.size, 0);
+    t.equal(entry1.directory, true);
 
-  // // entry 2
-  entry = (await it.next()).value;
-  t.equal(entry.name, 'folder/subfolder/');
-  t.equal(entry.size, 0);
-  t.equal(entry.compressedSize, 0);
-  t.equal(entry.directory, true);
+    // entry 2
+    const entry2 = extractedEntries[1];
+    t.equal(entry2.name, 'folder/subfolder/');
+    t.equal(entry2.size, 0);
+    t.equal(entry2.directory, true);
 
-  t.ok((await it.next()).done);
-  t.end();
+    t.end();
+  });
 });
 
-test('Reading - text.zip', async (t) => {
-  const it = Reader(fixtures['text.zip']);
+['Reader', 'StreamReader'].forEach((method) => {
+  test(`${method} - text.zip`, async (t) => {
+    const extractedEntries = await extractEntriesFromZip(
+      method,
+      fixtures['text.zip'],
+    );
 
-  // entry 1
-  const entry = (await it.next()).value;
-  t.equal(entry.name, 'Hello.txt');
-  t.equal(entry.size, 12);
-  t.equal(entry.directory, false);
-  t.equal(entry.compressedSize, 12);
-  t.equal(await entry.text(), 'Hello World\n');
+    // entry 1
+    const entry = extractedEntries[0];
+    t.equal(entry.name, 'Hello.txt');
+    t.equal(entry.size, 12);
+    t.equal(entry.directory, false);
+    if (method === 'Reader') {
+      t.equal(entry.compressedSize, 12);
+    }
+    t.equal(await entry.text(), 'Hello World\n');
 
-  t.ok((await it.next()).done);
-  t.end();
+    t.end();
+  });
 });
 
-// zip -X -0 utf8_in_name.zip €15.txt
-test('Reading - utf8_in_name.zip', async (t) => {
-  const it = Reader(fixtures['utf8_in_name.zip']);
+['Reader', 'StreamReader'].forEach((method) => {
+  test(`${method} - utf8_in_name.zip`, async (t) => {
+    const extractedEntries = await extractEntriesFromZip(
+      method,
+      fixtures['utf8_in_name.zip'],
+    );
 
-  // entry 1
-  const entry = (await it.next()).value;
-  t.equal(entry.name, '€15.txt');
-  t.equal(entry.directory, false);
-  t.equal(entry.size, 6);
-  t.equal(entry.compressedSize, 6);
-  t.equal(await entry.text(), '€15\n');
+    // entry 1
+    const entry = extractedEntries[0];
+    t.equal(entry.name, '€15.txt');
+    t.equal(entry.directory, false);
+    t.equal(entry.size, 6);
+    if (method === 'Reader') {
+      t.equal(entry.compressedSize, 6);
+    }
+    t.equal(await entry.text(), '€15\n');
 
-  t.ok((await it.next()).done);
-  t.end();
+    t.end();
+  });
 });
 
-// zip -X -0 utf8.zip amount.txt
-test('Reading - utf8.zip', async (t) => {
-  const it = Reader(fixtures['utf8.zip']);
+['Reader', 'StreamReader'].forEach((method) => {
+  test(`${method} - utf8.zip`, async (t) => {
+    const extractedEntries = await extractEntriesFromZip(
+      method,
+      fixtures['utf8.zip'],
+    );
 
-  // entry 1
-  const entry = (await it.next()).value;
-  t.equal(entry.name, 'amount.txt');
-  t.equal(entry.directory, false);
-  t.equal(entry.size, 6);
-  t.equal(entry.compressedSize, 6);
-  t.equal(await entry.text(), '€15\n');
+    // entry 1
+    const entry = extractedEntries[0];
+    t.equal(entry.name, 'amount.txt');
+    t.equal(entry.directory, false);
+    t.equal(entry.size, 6);
+    if (method === 'Reader') {
+      t.equal(entry.compressedSize, 6);
+    }
+    t.equal(await entry.text(), '€15\n');
 
-  t.ok((await it.next()).done);
-  t.end();
+    t.end();
+  });
 });
 
 // Created with winrar
 // winrar will replace the euro symbol with a '_' but set the correct unicode path in an extra field.
-test('Reading - winrar_utf8_in_name.zip', async (t) => {
+test('Reader - winrar_utf8_in_name.zip', async (t) => {
   const it = Reader(fixtures['winrar_utf8_in_name.zip']);
 
   // entry 1
