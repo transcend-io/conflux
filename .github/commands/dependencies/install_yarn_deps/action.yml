@@ -6,7 +6,7 @@ runs:
     # Install Yarn v2 dependencies
     - uses: actions/setup-node@v4.2.0
       with:
-        node-version: '18.20.6'
+        node-version-file: '.nvmrc'
 
     - run: npm install -g "yarn@1.22.19"
       shell: bash
