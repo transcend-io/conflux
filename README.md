@@ -195,6 +195,35 @@ fetch('https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/deflate.zip').then(
 );
 ```
 
+### Reading ZIP files from a stream
+
+#### Example using `ReadableStream#pipeThrough`
+
+```js
+import { StreamReader } from '@transcend-io/conflux';
+import streamSaver from 'streamsaver';
+
+// Fetch a ZIP file from a remote source
+const zipUrl = 'https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/deflate.zip';
+const response = await fetch(zipUrl);
+
+// Extract files from the ZIP stream
+response.body.pipeThrough(new StreamReader()).pipeTo(
+  new WritableStream({
+    async write({ name, stream }) {
+      console.log(`Extracting: ${name}`);
+
+      // Save each extracted file
+      const fileStream = stream();
+      const fileName = name.replace(/^\//, ''); // Remove leading slash
+      const writableStream = streamSaver.createWriteStream(fileName);
+
+      await fileStream.pipeTo(writableStream);
+    },
+  }),
+);
+```
+
 ## Supporting Firefox
 
 Firefox [does not support ReadableStream#pipeThrough](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream#browser_compatibility), since it does not have `WritableStream` or `TransformStream` support yet. Conflux ponyfills `TransformStream` out of the box in Firefox, but if you're using the `myReadable.pipeThrough` and plan to support Firefox, you'll want to ponyfill `ReadableStream` like so:

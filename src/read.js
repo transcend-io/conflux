@@ -567,27 +567,50 @@ class StreamTransformer {
 
       if (id === 0x0001 && len >= 8) {
         // ZIP64 extra field
-        if (localHeader.uncompressedSize === MAX_VALUE_32BITS || localHeader.uncompressedSize === -1) {
+        if (
+          localHeader.uncompressedSize === MAX_VALUE_32BITS ||
+          localHeader.uncompressedSize === -1
+        ) {
           const bigIntSize = getBigInt64(
-            new DataView(extraFieldData.buffer, extraFieldData.byteOffset + offset, 8),
+            new DataView(
+              extraFieldData.buffer,
+              extraFieldData.byteOffset + offset,
+              8,
+            ),
             0,
             true,
           );
           // Safety check: ensure the size can be safely converted to a JavaScript number
-          if (JSBI.greaterThan(bigIntSize, JSBI.BigInt(Number.MAX_SAFE_INTEGER))) {
-            throw new Error('ZIP64 uncompressed size too large for JavaScript number');
+          if (
+            JSBI.greaterThan(bigIntSize, JSBI.BigInt(Number.MAX_SAFE_INTEGER))
+          ) {
+            throw new Error(
+              'ZIP64 uncompressed size too large for JavaScript number',
+            );
           }
           localHeader.uncompressedSize = JSBI.toNumber(bigIntSize);
         }
-        if ((localHeader.compressedSize === MAX_VALUE_32BITS || localHeader.compressedSize === -1) && len >= 16) {
+        if (
+          (localHeader.compressedSize === MAX_VALUE_32BITS ||
+            localHeader.compressedSize === -1) &&
+          len >= 16
+        ) {
           const bigIntSize = getBigInt64(
-            new DataView(extraFieldData.buffer, extraFieldData.byteOffset + offset + 8, 8),
+            new DataView(
+              extraFieldData.buffer,
+              extraFieldData.byteOffset + offset + 8,
+              8,
+            ),
             0,
             true,
           );
           // Safety check: ensure the size can be safely converted to a JavaScript number
-          if (JSBI.greaterThan(bigIntSize, JSBI.BigInt(Number.MAX_SAFE_INTEGER))) {
-            throw new Error('ZIP64 compressed size too large for JavaScript number');
+          if (
+            JSBI.greaterThan(bigIntSize, JSBI.BigInt(Number.MAX_SAFE_INTEGER))
+          ) {
+            throw new Error(
+              'ZIP64 compressed size too large for JavaScript number',
+            );
           }
           localHeader.compressedSize = JSBI.toNumber(bigIntSize);
         }
@@ -652,10 +675,11 @@ class StreamTransformer {
     }
 
     // Determine if this is a ZIP64 entry
-    header.isZip64 = originalCompressedSize === MAX_VALUE_32BITS ||
-                     originalUncompressedSize === MAX_VALUE_32BITS ||
-                     originalCompressedSize === -1 ||
-                     originalUncompressedSize === -1;
+    header.isZip64 =
+      originalCompressedSize === MAX_VALUE_32BITS ||
+      originalUncompressedSize === MAX_VALUE_32BITS ||
+      originalCompressedSize === -1 ||
+      originalUncompressedSize === -1;
 
     return { header, headerSize: totalHeaderSize };
   }
@@ -697,7 +721,7 @@ class StreamTransformer {
         // Emit the entry
         controller.enqueue({ name: header.name, stream: () => entry.stream() });
 
-                // Set up for reading file data
+        // Set up for reading file data
         this.currentEntry = header;
         this.remainingFileBytes = header.hasDataDescriptor
           ? Infinity
@@ -739,7 +763,7 @@ class StreamTransformer {
               }
             }
           }
-                } else {
+        } else {
           // Known file size, add data until we reach the limit
           const toSend = Math.min(this.buffer.length, this.remainingFileBytes);
           if (toSend > 0) {
