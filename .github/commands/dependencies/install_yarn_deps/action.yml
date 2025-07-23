@@ -4,12 +4,14 @@ runs:
   using: 'composite'
   steps:
     # Install Yarn v2 dependencies
-    - uses: actions/setup-node@v2
+    - uses: actions/setup-node@v4.2.0
       with:
-        node-version: '20.9.0'
-    - run: npm install -g "yarn@1.22.5"
+        node-version-file: '.nvmrc'
+
+    - run: npm install -g "yarn@1.22.19"
       shell: bash
-    - uses: actions/cache@v2
+
+    - uses: actions/cache@v4.2.0
       id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
       with:
         path: |
@@ -17,9 +19,9 @@ runs:
           .yarn/unplugged
           .yarn/install-state.gz
           .pnp.cjs
-        key: ${{ runner.os }}-${{ runner.arch }}-yarn-v4-${{ hashFiles('**/yarn.lock', '**/package.json') }}
+        key: ${{ runner.os }}-${{ runner.arch }}-yarn-v3-${{ hashFiles('**/yarn.lock', '**/package.json') }}
         restore-keys: |
-          ${{ runner.os }}-${{ runner.arch }}-yarn-v4-
+          ${{ runner.os }}-${{ runner.arch }}-yarn-v3-
     - run: yarn install --immutable
       name: Install yarn deps
       shell: bash
