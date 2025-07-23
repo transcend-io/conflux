@@ -38,7 +38,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 100 # need the history to do a changed files check below (source, origin)
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v5
       - uses: ./.github/commands/dependencies/install_yarn_deps
       - uses: pre-commit/action@v3.0.0
 
