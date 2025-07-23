@@ -567,23 +567,29 @@ class StreamTransformer {
 
       if (id === 0x0001 && len >= 8) {
         // ZIP64 extra field
-        if (localHeader.uncompressedSize === MAX_VALUE_32BITS) {
-          localHeader.uncompressedSize = JSBI.toNumber(
-            getBigInt64(
-              new DataView(extraFieldData.buffer, offset, 8),
-              0,
-              true,
-            ),
+        if (localHeader.uncompressedSize === MAX_VALUE_32BITS || localHeader.uncompressedSize === -1) {
+          const bigIntSize = getBigInt64(
+            new DataView(extraFieldData.buffer, extraFieldData.byteOffset + offset, 8),
+            0,
+            true,
           );
+          // Safety check: ensure the size can be safely converted to a JavaScript number
+          if (JSBI.greaterThan(bigIntSize, JSBI.BigInt(Number.MAX_SAFE_INTEGER))) {
+            throw new Error('ZIP64 uncompressed size too large for JavaScript number');
+          }
+          localHeader.uncompressedSize = JSBI.toNumber(bigIntSize);
         }
-        if (localHeader.compressedSize === MAX_VALUE_32BITS && len >= 16) {
-          localHeader.compressedSize = JSBI.toNumber(
-            getBigInt64(
-              new DataView(extraFieldData.buffer, offset + 8, 8),
-              0,
-              true,
-            ),
+        if ((localHeader.compressedSize === MAX_VALUE_32BITS || localHeader.compressedSize === -1) && len >= 16) {
+          const bigIntSize = getBigInt64(
+            new DataView(extraFieldData.buffer, extraFieldData.byteOffset + offset + 8, 8),
+            0,
+            true,
           );
+          // Safety check: ensure the size can be safely converted to a JavaScript number
+          if (JSBI.greaterThan(bigIntSize, JSBI.BigInt(Number.MAX_SAFE_INTEGER))) {
+            throw new Error('ZIP64 compressed size too large for JavaScript number');
+          }
+          localHeader.compressedSize = JSBI.toNumber(bigIntSize);
         }
         break;
       }
@@ -621,6 +627,10 @@ class StreamTransformer {
 
     header.hasDataDescriptor = (header.bitFlag & 0x0008) !== 0;
 
+    // Store original values before ZIP64 parsing to detect ZIP64 entries
+    const originalCompressedSize = header.compressedSize;
+    const originalUncompressedSize = header.uncompressedSize;
+
     const totalHeaderSize =
       30 + header.filenameLength + header.extraFieldLength;
     if (buffer.length - offset < totalHeaderSize) return null; // Need complete header
@@ -640,6 +650,12 @@ class StreamTransformer {
       );
       StreamTransformer.parseZip64ExtraField(extraFieldData, header);
     }
+
+    // Determine if this is a ZIP64 entry
+    header.isZip64 = originalCompressedSize === MAX_VALUE_32BITS ||
+                     originalUncompressedSize === MAX_VALUE_32BITS ||
+                     originalCompressedSize === -1 ||
+                     originalUncompressedSize === -1;
 
     return { header, headerSize: totalHeaderSize };
   }
@@ -681,7 +697,7 @@ class StreamTransformer {
         // Emit the entry
         controller.enqueue({ name: header.name, stream: () => entry.stream() });
 
-        // Set up for reading file data
+                // Set up for reading file data
         this.currentEntry = header;
         this.remainingFileBytes = header.hasDataDescriptor
           ? Infinity
@@ -701,11 +717,8 @@ class StreamTransformer {
                   this.currentCompressedChunks.push(this.buffer.slice(0, i));
                 }
 
-                // Skip the data descriptor (16 bytes for regular, 20 for ZIP64)
-                const descriptorSize =
-                  this.currentEntry.compressedSize === MAX_VALUE_32BITS
-                    ? 20
-                    : 16;
+                // Skip the data descriptor (16 bytes for regular, 24 for ZIP64)
+                const descriptorSize = this.currentEntry.isZip64 ? 24 : 16;
                 this.buffer = this.buffer.slice(i + descriptorSize);
                 this.state = 'seeking_header';
                 this.currentEntry = null;
@@ -726,7 +739,7 @@ class StreamTransformer {
               }
             }
           }
-        } else {
+                } else {
           // Known file size, add data until we reach the limit
           const toSend = Math.min(this.buffer.length, this.remainingFileBytes);
           if (toSend > 0) {

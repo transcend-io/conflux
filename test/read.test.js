@@ -9,111 +9,116 @@ async function isSmiley(entry) {
   return entry.size === 41 && entry.directory === false && a1.equals(a2);
 }
 
-test('StreamReader - all_appended_bytes.zip', async (t) => {
-  // 1. Pipe the raw bytes through our StreamReader
-  const entries = fixtures['all_appended_bytes.zip'].stream()
-    .pipeThrough(new StreamReader());
+/**
+ * Abstraction to extract entries from either Reader or StreamReader
+ * Returns a normalized array of entries for testing
+ */
+async function extractEntriesFromZip(method, fixture, { zip64 = false } = {}) {
+  if (method === 'Reader') {
+    // Use the traditional Reader (async iterator)
+    const entries = [];
+    const it = Reader(fixture);
 
-  const extractedEntries = [];
-
-  // 2. Sink: a WritableStream that handles each entry object
-  const sink = new WritableStream({
-    async write({ name, stream: fileStreamFn }) {
-      // Read the file content
-      const chunks = [];
-      const fileStream = fileStreamFn();
-      const reader = fileStream.getReader();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-      }
-
-      // Create a mock entry object that matches the interface expected by tests
-      const mockEntry = {
-        name,
-        directory: name.endsWith('/'),
-        zip64: false, // For this test file, no ZIP64
-        size: chunks.reduce((sum, chunk) => sum + chunk.length, 0),
-        async arrayBuffer() {
-          const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-          const result = new Uint8Array(totalLength);
-          let offset = 0;
-          chunks.forEach((chunk) => {
-            result.set(chunk, offset);
-            offset += chunk.length;
-          });
-          return result.buffer;
-        },
-        async text() {
-          const blob = new Blob(chunks);
-          return blob.text();
-        }
-      };
-
-      extractedEntries.push(mockEntry);
-    },
-    close() {
-      // All entries collected, now run assertions
-    },
-    abort(err) {
-      t.fail(`StreamReader extraction failed: ${err.message}`);
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const result = await it.next();
+      if (result.done) break;
+      entries.push(result.value);
     }
+
+    return entries;
+  }
+  if (method === 'StreamReader') {
+    // Use the new StreamReader (transform stream)
+    const entries = fixture.stream().pipeThrough(new StreamReader());
+    const extractedEntries = [];
+
+    const sink = new WritableStream({
+      async write({ name, stream: fileStreamFn }) {
+        // Read the file content
+        const chunks = [];
+        const fileStream = fileStreamFn();
+        const reader = fileStream.getReader();
+
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+        }
+
+        // Create a mock entry object that matches the interface expected by tests
+        const mockEntry = {
+          name,
+          directory: name.endsWith('/'),
+          zip64,
+          size: chunks.reduce((sum, chunk) => sum + chunk.length, 0),
+          async arrayBuffer() {
+            const totalLength = chunks.reduce(
+              (sum, chunk) => sum + chunk.length,
+              0,
+            );
+            const result = new Uint8Array(totalLength);
+            let offset = 0;
+            chunks.forEach((chunk) => {
+              result.set(chunk, offset);
+              offset += chunk.length;
+            });
+            return result.buffer;
+          },
+          async text() {
+            const blob = new Blob(chunks);
+            return blob.text();
+          },
+        };
+
+        extractedEntries.push(mockEntry);
+      },
+      abort(err) {
+        throw new Error(`StreamReader extraction failed: ${err.message}`);
+      },
+    });
+
+    await entries.pipeTo(sink);
+    return extractedEntries;
+  }
+
+  throw new Error(`Unknown method: ${method}`);
+}
+
+// Test both Reader and StreamReader with the same test cases
+['Reader', 'StreamReader'].forEach((method) => {
+  test(`${method} - all_appended_bytes.zip`, async (t) => {
+    const extractedEntries = await extractEntriesFromZip(
+      method,
+      fixtures['all_appended_bytes.zip'],
+    );
+
+    // Run the same assertions for both implementations
+    t.equal(extractedEntries.length, 3, 'Should have 3 entries');
+
+    // entry 1
+    const entry1 = extractedEntries[0];
+    t.equal(entry1.name, 'Hello.txt');
+    t.equal(entry1.directory, false);
+    t.equal(entry1.zip64, false);
+    t.equal(await entry1.text(), 'Hello World\n');
+
+    // entry 2
+    const entry2 = extractedEntries[1];
+    t.equal(entry2.name, 'images/');
+    t.equal(entry2.directory, true);
+
+    // entry 3
+    const entry3 = extractedEntries[2];
+    t.equal(entry3.name, 'images/smile.gif');
+    t.equal(await isSmiley(entry3), true);
+
+    t.end();
   });
-
-  // 3. Kick off the pipeline
-  await entries.pipeTo(sink);
-
-  // Now run the same assertions as the original test
-  t.equal(extractedEntries.length, 3, 'Should have 3 entries');
-
-  // entry 1
-  const entry1 = extractedEntries[0];
-  t.equal(entry1.name, 'Hello.txt');
-  t.equal(entry1.directory, false);
-  t.equal(entry1.zip64, false);
-  t.equal(await entry1.text(), 'Hello World\n');
-
-  // entry 2
-  const entry2 = extractedEntries[1];
-  t.equal(entry2.name, 'images/');
-  t.equal(entry2.directory, true);
-
-  // entry 3
-  const entry3 = extractedEntries[2];
-  t.equal(entry3.name, 'images/smile.gif');
-  t.equal(await isSmiley(entry3), true);
-
-  t.end();
 });
 
-// All test are orderd by filename
-test('Reading - all_appended_bytes.zip', async (t) => {
-  const it = Reader(fixtures['all_appended_bytes.zip']);
-
-  // entry 1
-  let entry = (await it.next()).value;
-  t.equal(entry.name, 'Hello.txt');
-  t.equal(entry.directory, false);
-  t.equal(entry.zip64, false);
-  t.equal(await entry.text(), 'Hello World\n');
-
-  // entry 2
-  entry = (await it.next()).value;
-  t.equal(entry.name, 'images/');
-  t.equal(entry.directory, true);
-
-  // entry 3
-  entry = (await it.next()).value;
-  t.equal(entry.name, 'images/smile.gif');
-  t.equal(await isSmiley(entry), true);
-
-  t.ok((await it.next()).done);
-  t.end();
-});
-
-test('Reading - all_missing_bytes.zip', async (t) => {
+test('Reader - all_missing_bytes.zip', async (t) => {
   const err = await Reader(fixtures['all_missing_bytes.zip'])
     .next()
     .catch((a) => a);
@@ -127,27 +132,31 @@ test.skip('all_prepended_bytes.zip', async (t) => {
   t.end();
 });
 
-test('Reading - all-stream.zip', async (t) => {
-  const it = Reader(fixtures['all-stream.zip']);
+['Reader', 'StreamReader'].forEach((method) => {
+  test(`${method} - all-stream.zip`, async (t) => {
+    const extractedEntries = await extractEntriesFromZip(
+      method,
+      fixtures['all-stream.zip'],
+    );
 
-  // entry 1
-  let entry = (await it.next()).value;
-  t.equal(entry.name, 'Hello.txt');
-  t.equal(entry.directory, false);
-  t.equal(await entry.text(), 'Hello World\n');
+    // entry 1
+    const entry1 = extractedEntries[0];
+    t.equal(entry1.name, 'Hello.txt');
+    t.equal(entry1.directory, false);
+    t.equal(await entry1.text(), 'Hello World\n');
 
-  // entry 2
-  entry = (await it.next()).value;
-  t.equal(entry.name, 'images/');
-  t.equal(entry.directory, true);
+    // entry 2
+    const entry2 = extractedEntries[1];
+    t.equal(entry2.name, 'images/');
+    t.equal(entry2.directory, true);
 
-  // entry 3
-  entry = (await it.next()).value;
-  t.equal(entry.name, 'images/smile.gif');
-  t.equal(await isSmiley(entry), true);
+    // entry 3
+    const entry3 = extractedEntries[2];
+    t.equal(entry3.name, 'images/smile.gif');
+    t.equal(await isSmiley(entry3), true);
 
-  t.ok((await it.next()).done);
-  t.end();
+    t.end();
+  });
 });
 
 test('Reading - all.7zip.zip', async (t) => {
@@ -642,17 +651,22 @@ test.skip('zip64_missing_bytes.zip', async (t) => {
   t.end();
 });
 
-test('Reading - zip64.zip', async (t) => {
-  const it = Reader(fixtures['zip64.zip']);
+['Reader', 'StreamReader'].forEach((method) => {
+  test(`${method} - zip64.zip`, async (t) => {
+    const extractedEntries = await extractEntriesFromZip(
+      method,
+      fixtures['zip64.zip'],
+      { zip64: true },
+    );
 
-  // entry 1
-  const entry = (await it.next()).value;
-  t.equal(entry.name, 'Hello.txt');
-  t.equal(entry.directory, false);
-  t.equal(entry.size, 12);
-  t.equal(entry.zip64, true);
-  t.equal(await entry.text(), 'Hello World\n');
+    // entry 1
+    const entry = extractedEntries[0];
+    t.equal(entry.name, 'Hello.txt');
+    t.equal(entry.directory, false);
+    t.equal(entry.size, 12);
+    t.equal(entry.zip64, true);
+    t.equal(await entry.text(), 'Hello World\n');
 
-  t.ok((await it.next()).done);
-  t.end();
+    t.end();
+  });
 });
