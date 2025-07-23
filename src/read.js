@@ -1,4 +1,4 @@
-/* eslint-disable no-underscore-dangle */
+/* eslint-disable no-underscore-dangle,no-use-before-define  */
 /**
  * Conflux
  * Read (and build) zip files with whatwg streams in the browser.
@@ -66,7 +66,15 @@ class Entry {
   }
 
   get compressedSize() {
-    return this.dataView.getUint32(20, true);
+    const size = this.dataView.getUint32(20, true);
+    if (size === MAX_VALUE_32BITS) {
+      // For ZIP64, read the actual compressed size from the ZIP64 extra field
+      const extraField = this._extraFields[0x0001];
+      if (extraField) {
+        return JSBI.toNumber(getBigInt64(extraField, 8, true));
+      }
+    }
+    return size;
   }
 
   get uncompressedSize() {
@@ -107,11 +115,20 @@ class Entry {
       // The extra field 0x0001 is used for ZIP64 information
       const extraField = this._extraFields[0x0001];
       if (extraField) {
-        // The offset is the third field in the ZIP64 extra fields
+        // The ZIP64 extra field contains:
+        // 1. Original size (8 bytes if uncompressed size is MAX_VALUE_32BITS)
+        // 2. Compressed size (8 bytes if compressed size is MAX_VALUE_32BITS)
+        // 3. Local header offset (8 bytes if offset is MAX_VALUE_32BITS)
+        const rawOffset = this.dataView.getUint32(42, true);
         const offset =
-          (this.compressedSize === MAX_VALUE_32BITS ? 8 : 0) +
-          (this.uncompressedSize === MAX_VALUE_32BITS ? 8 : 0);
-        return JSBI.toNumber(getBigInt64(extraField, offset, true));
+          (this.uncompressedSize === MAX_VALUE_32BITS ? 8 : 0) +
+          (this.compressedSize === MAX_VALUE_32BITS ? 8 : 0);
+
+        // Only read from ZIP64 extra field if the offset is MAX_VALUE_32BITS
+        if (rawOffset === MAX_VALUE_32BITS) {
+          return JSBI.toNumber(getBigInt64(extraField, offset, true));
+        }
+        return rawOffset;
       }
 
       throw new Error('ZIP64 extra field missing');
@@ -121,10 +138,11 @@ class Entry {
   }
 
   get zip64() {
+    // Check if any of the 32-bit fields are MAX_VALUE_32BITS, indicating ZIP64 format
     return (
-      this.compressedSize === MAX_VALUE_32BITS ||
-      this.uncompressedSize === MAX_VALUE_32BITS ||
-      this.dataView.getUint32(42, true) === MAX_VALUE_32BITS
+      this.dataView.getUint32(24, true) === MAX_VALUE_32BITS || // uncompressed size
+      this.dataView.getUint32(20, true) === MAX_VALUE_32BITS || // compressed size
+      this.dataView.getUint32(42, true) === MAX_VALUE_32BITS // offset
     );
   }
 
@@ -174,9 +192,16 @@ class Entry {
 
   get size() {
     const size = this.uncompressedSize;
-    return size === MAX_VALUE_32BITS
-      ? JSBI.toNumber(getBigInt64(this._extraFields[0x0001], 0))
-      : size;
+    if (size === MAX_VALUE_32BITS) {
+      // For ZIP64, read the actual size from the ZIP64 extra field
+      const extraField = this._extraFields[0x0001];
+      if (extraField) {
+        return JSBI.toNumber(getBigInt64(extraField, 0, true));
+      }
+      // Fallback to the original behavior if ZIP64 extra field is missing
+      return this._extraFields[1] ? this._extraFields[1].getUint8(0) : size;
+    }
+    return size;
   }
 
   stream() {
