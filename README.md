@@ -199,29 +199,33 @@ fetch('https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/deflate.zip').then(
 
 #### Example using `ReadableStream#pipeThrough`
 
+<!-- prettier-ignore -->
 ```js
 import { StreamReader } from '@transcend-io/conflux';
 import streamSaver from 'streamsaver';
 
 // Fetch a ZIP file from a remote source
-const zipUrl = 'https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/deflate.zip';
+const zipUrl = '/some-large.zip';
 const response = await fetch(zipUrl);
 
-// Extract files from the ZIP stream
-response.body.pipeThrough(new StreamReader()).pipeTo(
-  new WritableStream({
-    async write({ name, stream }) {
-      console.log(`Extracting: ${name}`);
+// Extract files with StreamReader (a TransformStream)
+response.body
+  .pipeThrough(new StreamReader())
+  .pipeTo(
+    new WritableStream({
+      // The StreamReader emits each file's name and a stream containing its contents
+      async write({ name, stream }) {
+        console.log(`Extracting: ${name}`);
 
-      // Save each extracted file
-      const fileStream = stream();
-      const fileName = name.replace(/^\//, ''); // Remove leading slash
-      const writableStream = streamSaver.createWriteStream(fileName);
-
-      await fileStream.pipeTo(writableStream);
-    },
-  }),
-);
+        // Save each extracted file, also with streams
+        const fileStream = stream();
+        await fileStream
+          .pipeTo(
+            streamSaver.createWriteStream(name)
+          );
+      },
+    }),
+  );
 ```
 
 ## Supporting Firefox
