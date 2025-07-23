@@ -760,6 +760,10 @@ class StreamTransformer {
                   this.buffer.slice(0, sendBytes),
                 );
                 this.buffer = this.buffer.slice(sendBytes);
+              } else {
+                // If buffer is exactly keepBytes or less, we need to wait for more data
+                // Break out of the loop to avoid infinite iteration
+                break;
               }
             }
           }
