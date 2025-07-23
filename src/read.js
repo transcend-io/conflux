@@ -15,7 +15,7 @@ const ERR_BAD_FORMAT = 'File format is not recognized.';
 const ZIP_COMMENT_MAX = 65536;
 const EOCDR_MIN = 22;
 const EOCDR_MAX = EOCDR_MIN + ZIP_COMMENT_MAX;
-const MAX_VALUE_32BITS = 0xffffffff;
+const MAX_VALUE_32BITS = 0xffffffff; // ZIP64 indicator: when 32-bit fields reach this value, use ZIP64 extra field
 
 const decoder = new TextDecoder();
 const uint16e = (b, n) => b[n] | (b[n + 1] << 8);
@@ -71,14 +71,31 @@ class Entry {
       // For ZIP64, read the actual compressed size from the ZIP64 extra field
       const extraField = this._extraFields[0x0001];
       if (extraField) {
-        return JSBI.toNumber(getBigInt64(extraField, 8, true));
+        const rawUncompressedSize = this.dataView.getUint32(24, true);
+        let zip64Offset = 0;
+
+        // If uncompressed size is 0xFFFFFFFF, skip 8 bytes
+        if (rawUncompressedSize === MAX_VALUE_32BITS) {
+          zip64Offset += 8;
+        }
+
+        return JSBI.toNumber(getBigInt64(extraField, zip64Offset, true));
       }
     }
     return size;
   }
 
   get uncompressedSize() {
-    return this.dataView.getUint32(24, true);
+    const size = this.dataView.getUint32(24, true);
+    if (size === MAX_VALUE_32BITS) {
+      // For ZIP64, read the actual uncompressed size from the ZIP64 extra field
+      const extraField = this._extraFields[0x0001];
+      if (extraField) {
+        // According to ZIP64 specification (4.5.3), Original Size is always at offset 0
+        return JSBI.toNumber(getBigInt64(extraField, 0, true));
+      }
+    }
+    return size;
   }
 
   get filenameLength() {
@@ -115,19 +132,28 @@ class Entry {
       // The extra field 0x0001 is used for ZIP64 information
       const extraField = this._extraFields[0x0001];
       if (extraField) {
-        // The ZIP64 extra field contains:
-        // 1. Original size (8 bytes if uncompressed size is MAX_VALUE_32BITS)
-        // 2. Compressed size (8 bytes if compressed size is MAX_VALUE_32BITS)
-        // 3. Local header offset (8 bytes if offset is MAX_VALUE_32BITS)
+        const rawUncompressedSize = this.dataView.getUint32(24, true);
+        const rawCompressedSize = this.dataView.getUint32(20, true);
         const rawOffset = this.dataView.getUint32(42, true);
-        const offset =
-          (this.uncompressedSize === MAX_VALUE_32BITS ? 8 : 0) +
-          (this.compressedSize === MAX_VALUE_32BITS ? 8 : 0);
 
-        // Only read from ZIP64 extra field if the offset is MAX_VALUE_32BITS
-        if (rawOffset === MAX_VALUE_32BITS) {
-          return JSBI.toNumber(getBigInt64(extraField, offset, true));
+        // Calculate the offset into the ZIP64 extra field
+        let zip64Offset = 0;
+
+        // If uncompressed size is 0xFFFFFFFF, skip 8 bytes
+        if (rawUncompressedSize === MAX_VALUE_32BITS) {
+          zip64Offset += 8;
         }
+
+        // If compressed size is 0xFFFFFFFF, skip 8 bytes
+        if (rawCompressedSize === MAX_VALUE_32BITS) {
+          zip64Offset += 8;
+        }
+
+        // If the offset field is 0xFFFFFFFF, read it from ZIP64 extra field
+        if (rawOffset === MAX_VALUE_32BITS) {
+          return JSBI.toNumber(getBigInt64(extraField, zip64Offset, true));
+        }
+
         return rawOffset;
       }
 
@@ -139,6 +165,7 @@ class Entry {
 
   get zip64() {
     // Check if any of the 32-bit fields are MAX_VALUE_32BITS, indicating ZIP64 format
+    // Use the raw values to avoid infinite recursion
     return (
       this.dataView.getUint32(24, true) === MAX_VALUE_32BITS || // uncompressed size
       this.dataView.getUint32(20, true) === MAX_VALUE_32BITS || // compressed size
@@ -198,8 +225,6 @@ class Entry {
       if (extraField) {
         return JSBI.toNumber(getBigInt64(extraField, 0, true));
       }
-      // Fallback to the original behavior if ZIP64 extra field is missing
-      return this._extraFields[1] ? this._extraFields[1].getUint8(0) : size;
     }
     return size;
   }
