@@ -1,5 +1,5 @@
 import './read.test.js';
-// import './write.test.js';
+import './write.test.js';
 
 Blob.prototype.stream = function stream() {
   return new Response(this).body;
