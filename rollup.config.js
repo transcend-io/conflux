@@ -1,24 +1,7 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import babel from '@rollup/plugin-babel';
 import { terser } from 'rollup-plugin-terser';
 import pkg from './package.json';
-
-const babelDefaults = {
-  // see: https://github.com/rollup/plugins/tree/master/packages/babel#babelhelpers and the note about @babel/runtime for CJS/ES
-  babelHelpers: 'runtime',
-  configFile: './babel.config.js',
-  plugins: [
-    [
-      '@babel/plugin-transform-runtime',
-      {
-        regenerator: true,
-        corejs: { version: 3, proposals: true },
-      },
-    ],
-  ],
-  exclude: ['node_modules/**'],
-};
 
 export default [
   // browser-friendly UMD build
@@ -34,7 +17,6 @@ export default [
     plugins: [
       resolve(), // so Rollup can find package dependencies
       commonjs(), // so Rollup can convert package dependencies to an ES module
-      babel(babelDefaults),
       terser(),
     ],
   },
@@ -47,11 +29,10 @@ export default [
   // `file` and `format` for each target)
   {
     input: 'src/index.js',
-    external: [/pako/, /jsbi/, /web-streams-polyfill/, /@babel\/runtime/],
+    external: [/pako/],
     output: [
       // { file: pkg.main, format: 'cjs' }, // don't need a Node import yet
       { file: pkg.module, format: 'es' },
     ],
-    plugins: [babel(babelDefaults)],
   },
 ];

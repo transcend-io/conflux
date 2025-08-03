@@ -195,32 +195,6 @@ fetch('https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/deflate.zip').then(
 );
 ```
 
-## Supporting Firefox
-
-Firefox [does not support ReadableStream#pipeThrough](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream#browser_compatibility), since it does not have `WritableStream` or `TransformStream` support yet. Conflux ponyfills `TransformStream` out of the box in Firefox, but if you're using the `myReadable.pipeThrough` and plan to support Firefox, you'll want to ponyfill `ReadableStream` like so:
-
-```js
-import { ReadableStream as ReadableStreamPonyfill } from 'web-streams-polyfill/ponyfill';
-
-// Support Firefox with a ponyfill on ReadableStream to add .pipeThrough
-const ModernReadableStream = window.WritableStream
-  ? window.ReadableStream
-  : ReadableStreamPonyfill;
-
-const myReadable = new ModernReadableStream({
-  async pull(controller) {
-    return controller.enqueue({
-      name: `/firefox.txt`,
-      stream: () => new Response.body('Firefox works!'),
-    });
-  },
-});
-
-myReadable
-  .pipeThrough(new Writer()) // see "Supporting Firefox" below
-  .pipeTo(streamSaver.createWriteStream('conflux.zip'));
-```
-
 ## License
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Ftranscend-io%2Fconflux.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Ftranscend-io%2Fconflux?ref=badge_large)
