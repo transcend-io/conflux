@@ -64,30 +64,13 @@
 
 ### Importing Conflux
 
-#### Package Manager
-
 ```sh
-# With Yarn
-yarn add @transcend-io/conflux
-
-# With NPM
 npm install --save @transcend-io/conflux
 ```
 
 ```js
 // Reader parses zip files, Writer builds zip files
 import { Reader, Writer } from '@transcend-io/conflux';
-```
-
-#### CDN
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/@transcend-io/conflux@3"></script>
-```
-
-```js
-// Reader parses zip files, Writer builds zip files
-const { Reader, Writer } = window.conflux;
 ```
 
 ### Creating a ZIP
@@ -98,7 +81,7 @@ const { Reader, Writer } = window.conflux;
 import { Writer } from '@transcend-io/conflux';
 import streamSaver from 'streamsaver';
 
-const s3 = 'https://s3-us-west-2.amazonaws.com/bencmbrook/';
+const s3 = 'https://s3-us-west-2.amazonaws.com/your-bucket/';
 const files = ['NYT.txt', 'water.png', 'Earth.jpg'].values();
 
 const myReadable = new ReadableStream({
@@ -165,7 +148,7 @@ const fileStream = streamSaver.createWriteStream('conflux.zip');
   });
 
   const imgStream = await fetch(
-    'https://s3-us-west-2.amazonaws.com/bencmbrook/Earth.jpg',
+    'https://s3-us-west-2.amazonaws.com/your-bucket/Earth.jpg',
   ).then((r) => r.body);
 
   writer.write({
