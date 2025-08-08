@@ -1,18 +1,21 @@
 /* global globalThis BigInt */
 
-import JSBI from 'jsbi';
-
-// eslint-disable-next-line import/no-mutable-exports
-let jsbi;
-
 /**
- * If BigInt is natively supported, change JSBI to use native expressions
- * @see https://github.com/GoogleChromeLabs/jsbi/blob/master/jsbi.d.ts
- * @see https://github.com/GoogleChromeLabs/babel-plugin-transform-jsbi-to-bigint/blob/master/src/index.js
+ * Use JSBI syntax for BigInt operations, instead of calling BigInt directly.
+ *
+ * This is NOT a polyfill. This uses native BigInt. Using this syntax simply makes it possible to polyfill BigInt.
+ * If BigInt is not natively supported (ES2020+), library consumer MUST expose globalThis.JSBI before using Conflux.
+ *
+ * @see https://github.com/GoogleChromeLabs/jsbi - JSBI library for why BigInt
+ * @see https://github.com/GoogleChromeLabs/jsbi/blob/master/jsbi.d.ts - types
  */
-if (globalThis.BigInt) {
-  jsbi = {};
+if (!globalThis.BigInt) {
+  throw new Error('BigInt is not supported in this browser');
+}
 
+const jsbi = globalThis.JSBI || {};
+
+if (!jsbi.BigInt) {
   // constructor
   jsbi.BigInt = (a) => BigInt(a);
 
@@ -52,8 +55,6 @@ if (globalThis.BigInt) {
   // static methods
   jsbi.asIntN = (a, b) => BigInt.asIntN(a, b);
   jsbi.asUintN = (a, b) => BigInt.asUintN(a, b);
-} else {
-  jsbi = JSBI;
 }
 
 export default jsbi;

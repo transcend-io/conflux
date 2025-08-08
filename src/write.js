@@ -1,4 +1,3 @@
-/* global globalThis */
 /**
  * Conflux
  * Build (and read) zip files with whatwg streams in the browser.
@@ -6,8 +5,6 @@
  * @author Transcend Inc. <https://transcend.io>
  * @license MIT
  */
-// eslint-disable-next-line import/extensions
-import { TransformStream as PonyfillTransformStream } from 'web-streams-polyfill/ponyfill';
 import JSBI from './bigint.js';
 import Crc32 from './crc.js';
 
@@ -93,6 +90,7 @@ class ZipTransformer {
       zipObject.crc = new Crc32();
       const reader = entry.stream().getReader();
 
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         const it = await reader.read();
         if (it.done) break;
@@ -167,12 +165,7 @@ class ZipTransformer {
   }
 }
 
-const ModernTransformStream =
-  globalThis.TransformStream ||
-  globalThis.WebStreamsPolyfill?.TransformStream ||
-  PonyfillTransformStream;
-
-class Writer extends ModernTransformStream {
+class Writer extends TransformStream {
   constructor() {
     super(new ZipTransformer());
   }

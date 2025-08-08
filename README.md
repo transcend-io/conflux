@@ -9,14 +9,11 @@
   - [Examples](#examples)
   - [Usage](#usage)
     - [Importing Conflux](#importing-conflux)
-      - [Package Manager](#package-manager)
-      - [CDN](#cdn)
     - [Creating a ZIP](#creating-a-zip)
       - [Example using `ReadableStream#pipeThrough`](#example-using-readablestreampipethrough)
       - [Example using `writer.write`](#example-using-writerwrite)
       - [Incorporating other streams](#incorporating-other-streams)
     - [Reading ZIP files](#reading-zip-files)
-  - [Supporting Firefox](#supporting-firefox)
   - [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -64,30 +61,13 @@
 
 ### Importing Conflux
 
-#### Package Manager
-
 ```sh
-# With Yarn
-yarn add @transcend-io/conflux
-
-# With NPM
 npm install --save @transcend-io/conflux
 ```
 
 ```js
 // Reader parses zip files, Writer builds zip files
 import { Reader, Writer } from '@transcend-io/conflux';
-```
-
-#### CDN
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/@transcend-io/conflux@3"></script>
-```
-
-```js
-// Reader parses zip files, Writer builds zip files
-const { Reader, Writer } = window.conflux;
 ```
 
 ### Creating a ZIP
@@ -98,7 +78,7 @@ const { Reader, Writer } = window.conflux;
 import { Writer } from '@transcend-io/conflux';
 import streamSaver from 'streamsaver';
 
-const s3 = 'https://s3-us-west-2.amazonaws.com/bencmbrook/';
+const s3 = 'https://s3-us-west-2.amazonaws.com/your-bucket/';
 const files = ['NYT.txt', 'water.png', 'Earth.jpg'].values();
 
 const myReadable = new ReadableStream({
@@ -165,7 +145,7 @@ const fileStream = streamSaver.createWriteStream('conflux.zip');
   });
 
   const imgStream = await fetch(
-    'https://s3-us-west-2.amazonaws.com/bencmbrook/Earth.jpg',
+    'https://s3-us-west-2.amazonaws.com/your-bucket/Earth.jpg',
   ).then((r) => r.body);
 
   writer.write({
@@ -193,32 +173,6 @@ fetch('https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/deflate.zip').then(
     }
   },
 );
-```
-
-## Supporting Firefox
-
-Firefox [does not support ReadableStream#pipeThrough](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream#browser_compatibility), since it does not have `WritableStream` or `TransformStream` support yet. Conflux ponyfills `TransformStream` out of the box in Firefox, but if you're using the `myReadable.pipeThrough` and plan to support Firefox, you'll want to ponyfill `ReadableStream` like so:
-
-```js
-import { ReadableStream as ReadableStreamPonyfill } from 'web-streams-polyfill/ponyfill';
-
-// Support Firefox with a ponyfill on ReadableStream to add .pipeThrough
-const ModernReadableStream = window.WritableStream
-  ? window.ReadableStream
-  : ReadableStreamPonyfill;
-
-const myReadable = new ModernReadableStream({
-  async pull(controller) {
-    return controller.enqueue({
-      name: `/firefox.txt`,
-      stream: () => new Response.body('Firefox works!'),
-    });
-  },
-});
-
-myReadable
-  .pipeThrough(new Writer()) // see "Supporting Firefox" below
-  .pipeTo(streamSaver.createWriteStream('conflux.zip'));
 ```
 
 ## License
