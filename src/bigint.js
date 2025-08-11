@@ -9,8 +9,11 @@
  * @see https://github.com/GoogleChromeLabs/jsbi - JSBI library for why BigInt
  * @see https://github.com/GoogleChromeLabs/jsbi/blob/master/jsbi.d.ts - types
  */
-if (!globalThis.BigInt) {
-  throw new Error('BigInt is not supported in this browser');
+if (!globalThis.BigInt && !globalThis.JSBI) {
+  throw new Error(
+    'BigInt is not supported in this browser.' +
+      ' Conflux is unable to create zip files without BigInt support, or a JSBI polyfill.',
+  );
 }
 
 const jsbi = globalThis.JSBI || {};
