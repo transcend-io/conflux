@@ -40,7 +40,7 @@
 
 ## Blazing Fast
 
-- ~100 kB import
+- ~55 kB import
 - Uses streams, minimizing memory overhead
 
 ## Compatibility
@@ -174,6 +174,16 @@ fetch('https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/deflate.zip').then(
   },
 );
 ```
+
+## Supporting Legacy Browsers
+
+Conflux is compatible with all modern browsers since June 2022.
+
+If you need to support legacy browsers, you can add polyfills for:
+
+- [`TransformStream`](https://developer.mozilla.org/en-US/docs/Web/API/TransformStream), and [`WritableStream`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream) (available in browsers since June 2022) by adding [web-streams-polyfill](https://www.npmjs.com/package/web-streams-polyfill).
+- [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) (available in browsers since January 2020) by setting `globalThis.JSBI` equal to [JSBI](https://github.com/GoogleChromeLabs/jsbi) before importing Conflux.
+- [`globalThis`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/globalThis) (available in browsers since January 2020) by adding a polyfill like this [globalthis](https://www.npmjs.com/package/globalthis) or manually setting a shim.
 
 ## License
 
