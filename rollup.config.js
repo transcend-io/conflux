@@ -1,7 +1,5 @@
 import resolve from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
-import { terser } from 'rollup-plugin-terser';
-import pkg from './package.json';
+import pkg from './package.json' with { type: 'json' };
 
 export default [
   // browser-friendly UMD build
@@ -16,8 +14,6 @@ export default [
     ],
     plugins: [
       resolve(), // so Rollup can find package dependencies
-      commonjs(), // so Rollup can convert package dependencies to an ES module
-      terser(),
     ],
   },
 

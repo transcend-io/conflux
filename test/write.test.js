@@ -1,4 +1,4 @@
-import test from 'tape';
+import { assert } from '@esm-bundle/chai';
 import { Writer, Reader } from '../src/index.js';
 
 // function streamFrom(chunks) {
@@ -23,13 +23,13 @@ const fileLikeUtf8 = {
 };
 const folder = { name: 'folder/', directory: true };
 
-test('Writing - All in one big test', async (t) => {
+test('Writing - All in one big test', async () => {
   const { readable, writable } = new Writer();
   const writer = writable.getWriter();
-  writer.write(helloWorld);
-  writer.write(fileLikeUtf8);
-  writer.write(folder);
-  writer.close();
+  await writer.write(helloWorld);
+  await writer.write(fileLikeUtf8);
+  await writer.write(folder);
+  await writer.close();
 
   const chunks = [];
   const reader = readable.getReader();
@@ -44,54 +44,52 @@ test('Writing - All in one big test', async (t) => {
 
   // entry 1, Writer accepts native File object
   entry = (await it.next()).value;
-  t.equal(entry.versionMadeBy, 20, 'versionMadeBy should be 20');
-  t.equal(entry.versionNeeded, 20, 'versionNeeded should be 20');
-  t.equal(entry.bitFlag, 2056, 'bitflag should be 2056');
-  t.equal(entry.encrypted, false, 'entry is not encrypted');
-  t.equal(entry.compressionMethod, 0, 'entry has no compression');
-  t.equal(entry.crc32, 2962613731, 'crc checksum should be 2962613731');
-  t.equal(
+  assert.equal(entry.versionMadeBy, 20, 'versionMadeBy should be 20');
+  assert.equal(entry.versionNeeded, 20, 'versionNeeded should be 20');
+  assert.equal(entry.bitFlag, 2056, 'bitflag should be 2056');
+  assert.equal(entry.encrypted, false, 'entry is not encrypted');
+  assert.equal(entry.compressionMethod, 0, 'entry has no compression');
+  assert.equal(entry.crc32, 2962613731, 'crc checksum should be 2962613731');
+  assert.equal(
     entry.compressedSize,
     12,
     'compressed size should be same as size b/c no compression',
   );
-  t.equal(entry.filenameLength, 9, 'filenameLength is correct');
-  t.equal(entry.extraFieldLength, 0, 'entry have no extra fields');
-  t.equal(entry.commentLength, 0, 'native file object dont have comments');
-  t.equal(entry.diskNumberStart, 0, 'diskNumberStart is 0');
-  t.equal(entry.internalFileAttributes, 0, 'internalFileAttributes is 0');
-  t.equal(entry.externalFileAttributes, 0, 'externalFileAttributes is 0');
-  t.equal(entry.directory, false, 'directory should be false');
-  t.equal(entry.offset, 0, 'first entry starts at offset 0');
-  t.equal(entry.zip64, false, 'small entries are not zip64');
-  t.equal(entry.comment, '', 'helloWorld have no comments');
-  t.equal(+entry.lastModifiedDate, date, 'time is the same');
-  t.equal(entry.lastModified, date, 'entries should not store ms');
-  t.equal(entry.name, 'Hello.txt', 'entry name should be Hello.txt');
-  t.equal(entry.size, 12, 'entry size should be 12');
-  t.equal(
+  assert.equal(entry.filenameLength, 9, 'filenameLength is correct');
+  assert.equal(entry.extraFieldLength, 0, 'entry have no extra fields');
+  assert.equal(entry.commentLength, 0, 'native file object dont have comments');
+  assert.equal(entry.diskNumberStart, 0, 'diskNumberStart is 0');
+  assert.equal(entry.internalFileAttributes, 0, 'internalFileAttributes is 0');
+  assert.equal(entry.externalFileAttributes, 0, 'externalFileAttributes is 0');
+  assert.equal(entry.directory, false, 'directory should be false');
+  assert.equal(entry.offset, 0, 'first entry starts at offset 0');
+  assert.equal(entry.zip64, false, 'small entries are not zip64');
+  assert.equal(entry.comment, '', 'helloWorld have no comments');
+  assert.equal(+entry.lastModifiedDate, date, 'time is the same');
+  assert.equal(entry.lastModified, date, 'entries should not store ms');
+  assert.equal(entry.name, 'Hello.txt', 'entry name should be Hello.txt');
+  assert.equal(entry.size, 12, 'entry size should be 12');
+  assert.equal(
     (await entry.arrayBuffer()).byteLength,
     12,
     'it can return an arrayBuffer',
   );
-  t.equal(await entry.text(), 'Hello World\n', 'getting the text is accurate');
+  assert.equal(await entry.text(), 'Hello World\n', 'getting the text is accurate');
 
   // entry 2, The rest should be similar to entry 1 (test the differences is enough)
   entry = (await it.next()).value;
-  t.equal(entry.name, '€15.txt', 'Name with utf8 chars works');
-  t.equal(
+  assert.equal(entry.name, '€15.txt', 'Name with utf8 chars works');
+  assert.equal(
     entry.comment,
     "I'm a entry comment with utf8",
     'Entry should have a comment',
   );
-  t.equal(await entry.text(), '€15\n', 'Text should be the same');
-  t.equal(entry.filenameLength, 9, '€ takes up 3 bytes');
-  t.ok(entry.offset > 30, '2nd entry should not have the same offset as first');
+  assert.equal(await entry.text(), '€15\n', 'Text should be the same');
+  assert.equal(entry.filenameLength, 9, '€ takes up 3 bytes');
+  assert.ok(entry.offset > 30, '2nd entry should not have the same offset as first');
 
   // entry 3, it can create folders
   entry = (await it.next()).value;
-  t.equal(entry.directory, true, 'Entry should be a directory');
-  t.equal(entry.name, 'folder/', 'Entry name should be folder/');
-
-  t.end();
+  assert.equal(entry.directory, true, 'Entry should be a directory');
+  assert.equal(entry.name, 'folder/', 'Entry name should be folder/');
 });

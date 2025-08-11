@@ -1,0 +1,47 @@
+{
+  "extends": ["@tsconfig/strictest/tsconfig"],
+  "compilerOptions": {
+    "rootDir": ".",
+    "baseUrl": ".",
+
+    "composite": true,
+    "incremental": true,
+    "emitDeclarationOnly": true,
+    "outDir": ".build",
+
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "types": [],
+
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+
+    "allowJs": true,
+    "checkJs": true,
+
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noPropertyAccessFromIndexSignature": true
+  },
+  "exclude": [
+    "dist",
+    ".build",
+    "node_modules",
+    "coverage",
+    // Generated fixture files, excluding the fixtures.json file
+    "test/fixtures/files/*/*",
+    "hidden",
+    "rust",
+    "wasm"
+  ]
+}
