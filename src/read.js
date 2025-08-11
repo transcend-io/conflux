@@ -1,4 +1,5 @@
-/* eslint-disable no-underscore-dangle */
+/* global globalThis */
+/* eslint-disable no-underscore-dangle,no-use-before-define,no-param-reassign  */
 /**
  * Conflux
  * Read (and build) zip files with whatwg streams in the browser.
@@ -8,6 +9,8 @@
  */
 // eslint-disable-next-line import/extensions
 import { Inflate } from 'pako';
+// eslint-disable-next-line import/extensions
+import { TransformStream as PonyfillTransformStream } from 'web-streams-polyfill/ponyfill';
 import JSBI from './bigint.js';
 import Crc32 from './crc.js';
 
@@ -15,7 +18,7 @@ const ERR_BAD_FORMAT = 'File format is not recognized.';
 const ZIP_COMMENT_MAX = 65536;
 const EOCDR_MIN = 22;
 const EOCDR_MAX = EOCDR_MIN + ZIP_COMMENT_MAX;
-const MAX_VALUE_32BITS = 0xffffffff;
+const MAX_VALUE_32BITS = 0xffffffff; // ZIP64 indicator: when 32-bit fields reach this value, use ZIP64 extra field
 
 const decoder = new TextDecoder();
 const uint16e = (b, n) => b[n] | (b[n + 1] << 8);
@@ -66,7 +69,36 @@ class Entry {
   }
 
   get compressedSize() {
-    return this.dataView.getUint32(20, true);
+    const size = this.dataView.getUint32(20, true);
+    if (size === MAX_VALUE_32BITS) {
+      // For ZIP64, read the actual compressed size from the ZIP64 extra field
+      const extraField = this._extraFields[0x0001];
+      if (extraField) {
+        const rawUncompressedSize = this.dataView.getUint32(24, true);
+        let zip64Offset = 0;
+
+        // If uncompressed size is 0xFFFFFFFF, skip 8 bytes
+        if (rawUncompressedSize === MAX_VALUE_32BITS) {
+          zip64Offset += 8;
+        }
+
+        return JSBI.toNumber(getBigInt64(extraField, zip64Offset, true));
+      }
+    }
+    return size;
+  }
+
+  get uncompressedSize() {
+    const size = this.dataView.getUint32(24, true);
+    if (size === MAX_VALUE_32BITS) {
+      // For ZIP64, read the actual uncompressed size from the ZIP64 extra field
+      const extraField = this._extraFields[0x0001];
+      if (extraField) {
+        // According to ZIP64 specification (4.5.3), Original Size is always at offset 0
+        return JSBI.toNumber(getBigInt64(extraField, 0, true));
+      }
+    }
+    return size;
   }
 
   get filenameLength() {
@@ -98,11 +130,50 @@ class Entry {
   }
 
   get offset() {
-    return this.dataView.getUint32(42, true);
+    if (this.zip64) {
+      // Read the ZIP64 offset from the extra fields
+      // The extra field 0x0001 is used for ZIP64 information
+      const extraField = this._extraFields[0x0001];
+      if (extraField) {
+        const rawUncompressedSize = this.dataView.getUint32(24, true);
+        const rawCompressedSize = this.dataView.getUint32(20, true);
+        const rawOffset = this.dataView.getUint32(42, true);
+
+        // Calculate the offset into the ZIP64 extra field
+        let zip64Offset = 0;
+
+        // If uncompressed size is 0xFFFFFFFF, skip 8 bytes
+        if (rawUncompressedSize === MAX_VALUE_32BITS) {
+          zip64Offset += 8;
+        }
+
+        // If compressed size is 0xFFFFFFFF, skip 8 bytes
+        if (rawCompressedSize === MAX_VALUE_32BITS) {
+          zip64Offset += 8;
+        }
+
+        // If the offset field is 0xFFFFFFFF, read it from ZIP64 extra field
+        if (rawOffset === MAX_VALUE_32BITS) {
+          return JSBI.toNumber(getBigInt64(extraField, zip64Offset, true));
+        }
+
+        return rawOffset;
+      }
+
+      throw new Error('ZIP64 extra field missing');
+    } else {
+      return this.dataView.getUint32(42, true);
+    }
   }
 
   get zip64() {
-    return this.dataView.getUint32(24, true) === MAX_VALUE_32BITS;
+    // Check if any of the 32-bit fields are MAX_VALUE_32BITS, indicating ZIP64 format
+    // Use the raw values to avoid infinite recursion
+    return (
+      this.dataView.getUint32(24, true) === MAX_VALUE_32BITS || // uncompressed size
+      this.dataView.getUint32(20, true) === MAX_VALUE_32BITS || // compressed size
+      this.dataView.getUint32(42, true) === MAX_VALUE_32BITS // offset
+    );
   }
 
   get comment() {
@@ -150,8 +221,15 @@ class Entry {
   }
 
   get size() {
-    const size = this.dataView.getUint32(24, true);
-    return size === MAX_VALUE_32BITS ? this._extraFields[1].getUint8(0) : size;
+    const size = this.uncompressedSize;
+    if (size === MAX_VALUE_32BITS) {
+      // For ZIP64, read the actual size from the ZIP64 extra field
+      const extraField = this._extraFields[0x0001];
+      if (extraField) {
+        return JSBI.toNumber(getBigInt64(extraField, 0, true));
+      }
+    }
+    return size;
   }
 
   stream() {
@@ -358,4 +436,377 @@ async function* Reader(file) {
   }
 }
 
+const LOCAL_FILE_HEADER_SIGNATURE = 0x504b0304;
+const DATA_DESCRIPTOR_SIGNATURE = 0x08074b50;
+const CENTRAL_DIRECTORY_SIGNATURE = 0x504b0102;
+
+/**
+ * A streaming entry that represents a file being extracted from a ZIP stream
+ */
+class StreamEntry {
+  constructor(localHeader, compressedChunks) {
+    this.name = localHeader.name;
+    this.compressionMethod = localHeader.compressionMethod;
+    this.compressedSize = localHeader.compressedSize;
+    this.uncompressedSize = localHeader.uncompressedSize;
+    this.crc32 = localHeader.crc32;
+    this.hasDataDescriptor = localHeader.hasDataDescriptor;
+    this._compressedChunks = compressedChunks;
+  }
+
+  stream() {
+    const self = this;
+    const crc = new Crc32();
+    let inflator;
+
+    const onEnd = (ctrl) => {
+      if (self.hasDataDescriptor) {
+        // For streaming entries, we'll validate against the data descriptor when available
+        ctrl.close();
+      } else {
+        const actualCrc = crc.get();
+        const expectedCrc = self.crc32;
+        // Convert both to unsigned 32-bit for comparison
+        const actualUnsigned = actualCrc >>> 0;
+        const expectedUnsigned = expectedCrc >>> 0;
+
+        if (actualUnsigned === expectedUnsigned) {
+          ctrl.close();
+        } else {
+          console.log('CRC check for', self.name);
+          console.log(
+            'Expected:',
+            expectedCrc.toString(16),
+            'Actual:',
+            actualCrc.toString(16),
+          );
+          console.log('Compression method:', self.compressionMethod);
+          ctrl.error(new Error("The crc32 checksum doesn't match"));
+        }
+      }
+    };
+
+    return new ReadableStream({
+      start(ctrl) {
+        if (self.compressionMethod === 8) {
+          // DEFLATE
+          inflator = new Inflate({ raw: true });
+          inflator.onData = (chunk) => {
+            crc.append(chunk);
+            ctrl.enqueue(chunk);
+          };
+          inflator.onEnd = () => onEnd(ctrl);
+        }
+      },
+      pull(ctrl) {
+        if (!self._chunkIndex) {
+          self._chunkIndex = 0;
+        }
+
+        if (self._chunkIndex >= self._compressedChunks.length) {
+          if (!self._ended) {
+            self._ended = true;
+            if (inflator) {
+              inflator.push(new Uint8Array(0), true); // Signal end
+            } else {
+              onEnd(ctrl);
+            }
+          }
+          return;
+        }
+
+        const chunk = self._compressedChunks[self._chunkIndex];
+        self._chunkIndex++;
+
+        if (inflator) {
+          inflator.push(chunk);
+        } else {
+          // Store method (no compression)
+          crc.append(chunk);
+          ctrl.enqueue(chunk);
+        }
+      },
+    });
+  }
+}
+
+/**
+ * Parser for ZIP local file headers and data
+ */
+class StreamTransformer {
+  constructor() {
+    this.buffer = new Uint8Array(0);
+    this.state = 'seeking_header'; // 'seeking_header', 'reading_file_data', 'seeking_data_descriptor'
+    this.currentEntry = null;
+    this.remainingFileBytes = 0;
+    this.fileDataStream = null;
+    this.fileDataController = null;
+  }
+
+  /**
+   * Combine two Uint8Arrays
+   */
+  static concat(a, b) {
+    const result = new Uint8Array(a.length + b.length);
+    result.set(a);
+    result.set(b, a.length);
+    return result;
+  }
+
+  /**
+   * Parse ZIP64 extra field from local header
+   */
+  static parseZip64ExtraField(extraFieldData, localHeader) {
+    let offset = 0;
+    while (offset < extraFieldData.length) {
+      if (offset + 4 > extraFieldData.length) break;
+
+      const id = uint16e(extraFieldData, offset);
+      const len = uint16e(extraFieldData, offset + 2);
+      offset += 4;
+
+      if (id === 0x0001 && len >= 8) {
+        // ZIP64 extra field
+        if (
+          localHeader.uncompressedSize === MAX_VALUE_32BITS ||
+          localHeader.uncompressedSize === -1
+        ) {
+          const bigIntSize = getBigInt64(
+            new DataView(
+              extraFieldData.buffer,
+              extraFieldData.byteOffset + offset,
+              8,
+            ),
+            0,
+            true,
+          );
+          // Safety check: ensure the size can be safely converted to a JavaScript number
+          if (
+            JSBI.greaterThan(bigIntSize, JSBI.BigInt(Number.MAX_SAFE_INTEGER))
+          ) {
+            throw new Error(
+              'ZIP64 uncompressed size too large for JavaScript number',
+            );
+          }
+          localHeader.uncompressedSize = JSBI.toNumber(bigIntSize);
+        }
+        if (
+          (localHeader.compressedSize === MAX_VALUE_32BITS ||
+            localHeader.compressedSize === -1) &&
+          len >= 16
+        ) {
+          const bigIntSize = getBigInt64(
+            new DataView(
+              extraFieldData.buffer,
+              extraFieldData.byteOffset + offset + 8,
+              8,
+            ),
+            0,
+            true,
+          );
+          // Safety check: ensure the size can be safely converted to a JavaScript number
+          if (
+            JSBI.greaterThan(bigIntSize, JSBI.BigInt(Number.MAX_SAFE_INTEGER))
+          ) {
+            throw new Error(
+              'ZIP64 compressed size too large for JavaScript number',
+            );
+          }
+          localHeader.compressedSize = JSBI.toNumber(bigIntSize);
+        }
+        break;
+      }
+      offset += len;
+    }
+  }
+
+  /**
+   * Parse a local file header from the buffer
+   */
+  static parseLocalHeader(buffer, offset = 0) {
+    if (buffer.length - offset < 30) return null; // Need at least 30 bytes for local header
+
+    const dv = new DataView(buffer.buffer, buffer.byteOffset + offset);
+    const signature = dv.getUint32(0, false); // false for big endian (signatures are byte sequences)
+    if (signature !== LOCAL_FILE_HEADER_SIGNATURE) {
+      throw new Error('Invalid local file header signature');
+    }
+
+    const header = {
+      versionNeeded: uint16e(buffer, offset + 4),
+      bitFlag: uint16e(buffer, offset + 6),
+      compressionMethod: uint16e(buffer, offset + 8),
+      lastModTime: uint16e(buffer, offset + 10),
+      lastModDate: uint16e(buffer, offset + 12),
+      crc32:
+        uint16e(buffer, offset + 14) | (uint16e(buffer, offset + 16) << 16),
+      compressedSize:
+        uint16e(buffer, offset + 18) | (uint16e(buffer, offset + 20) << 16),
+      uncompressedSize:
+        uint16e(buffer, offset + 22) | (uint16e(buffer, offset + 24) << 16),
+      filenameLength: uint16e(buffer, offset + 26),
+      extraFieldLength: uint16e(buffer, offset + 28),
+    };
+
+    header.hasDataDescriptor = (header.bitFlag & 0x0008) !== 0;
+
+    // Store original values before ZIP64 parsing to detect ZIP64 entries
+    const originalCompressedSize = header.compressedSize;
+    const originalUncompressedSize = header.uncompressedSize;
+
+    const totalHeaderSize =
+      30 + header.filenameLength + header.extraFieldLength;
+    if (buffer.length - offset < totalHeaderSize) return null; // Need complete header
+
+    // Extract filename
+    const nameBytes = buffer.slice(
+      offset + 30,
+      offset + 30 + header.filenameLength,
+    );
+    header.name = decoder.decode(nameBytes);
+
+    // Parse extra fields (including ZIP64)
+    if (header.extraFieldLength > 0) {
+      const extraFieldData = buffer.slice(
+        offset + 30 + header.filenameLength,
+        offset + totalHeaderSize,
+      );
+      StreamTransformer.parseZip64ExtraField(extraFieldData, header);
+    }
+
+    // Determine if this is a ZIP64 entry
+    header.isZip64 =
+      originalCompressedSize === MAX_VALUE_32BITS ||
+      originalUncompressedSize === MAX_VALUE_32BITS ||
+      originalCompressedSize === -1 ||
+      originalUncompressedSize === -1;
+
+    return { header, headerSize: totalHeaderSize };
+  }
+
+  /**
+   * Transform incoming ZIP bytes
+   */
+  async transform(chunk, controller) {
+    this.buffer = StreamTransformer.concat(this.buffer, chunk);
+
+    while (this.buffer.length > 0) {
+      if (this.state === 'seeking_header') {
+        // Check if we've reached the central directory (end of file entries)
+        if (this.buffer.length >= 4) {
+          const dv = new DataView(this.buffer.buffer, this.buffer.byteOffset);
+          const signature = dv.getUint32(0, false);
+          if (signature === CENTRAL_DIRECTORY_SIGNATURE) {
+            // We've reached the central directory, stop processing
+            break;
+          }
+        }
+
+        // Try to parse a local file header
+        const result = StreamTransformer.parseLocalHeader(this.buffer);
+        if (!result) break; // Need more data
+
+        const { header, headerSize } = result;
+
+        // Remove header from buffer
+        this.buffer = this.buffer.slice(headerSize);
+
+        // Store the compressed data chunks for this file
+        const compressedChunks = [];
+        this.currentCompressedChunks = compressedChunks;
+
+        // Create the stream entry
+        const entry = new StreamEntry(header, compressedChunks);
+
+        // Emit the entry
+        controller.enqueue({ name: header.name, stream: () => entry.stream() });
+
+        // Set up for reading file data
+        this.currentEntry = header;
+        this.remainingFileBytes = header.hasDataDescriptor
+          ? Infinity
+          : header.compressedSize;
+        this.state = 'reading_file_data';
+      } else if (this.state === 'reading_file_data') {
+        if (this.remainingFileBytes === Infinity) {
+          // Look for data descriptor
+          if (this.buffer.length >= 16) {
+            // Check for data descriptor signature
+            for (let i = 0; i <= this.buffer.length - 16; i++) {
+              const sig =
+                uint16e(this.buffer, i) | (uint16e(this.buffer, i + 2) << 16);
+              if (sig === DATA_DESCRIPTOR_SIGNATURE) {
+                // Found data descriptor, add remaining data before it
+                if (i > 0) {
+                  this.currentCompressedChunks.push(this.buffer.slice(0, i));
+                }
+
+                // Skip the data descriptor (16 bytes for regular, 24 for ZIP64)
+                const descriptorSize = this.currentEntry.isZip64 ? 24 : 16;
+                this.buffer = this.buffer.slice(i + descriptorSize);
+                this.state = 'seeking_header';
+                this.currentEntry = null;
+                this.currentCompressedChunks = null;
+                break;
+              }
+            }
+
+            if (this.state === 'reading_file_data') {
+              // No data descriptor found yet, add most of the buffer but keep some for searching
+              const keepBytes = 16;
+              if (this.buffer.length > keepBytes) {
+                const sendBytes = this.buffer.length - keepBytes;
+                this.currentCompressedChunks.push(
+                  this.buffer.slice(0, sendBytes),
+                );
+                this.buffer = this.buffer.slice(sendBytes);
+              } else {
+                // If buffer is exactly keepBytes or less, we need to wait for more data
+                // Break out of the loop to avoid infinite iteration
+                break;
+              }
+            }
+          }
+        } else {
+          // Known file size, add data until we reach the limit
+          const toSend = Math.min(this.buffer.length, this.remainingFileBytes);
+          if (toSend > 0) {
+            this.currentCompressedChunks.push(this.buffer.slice(0, toSend));
+            this.buffer = this.buffer.slice(toSend);
+            this.remainingFileBytes -= toSend;
+          }
+
+          if (this.remainingFileBytes === 0) {
+            this.state = 'seeking_header';
+            this.currentEntry = null;
+            this.currentCompressedChunks = null;
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Handle end of stream
+   */
+  static flush() {
+    // Nothing to do - chunks are already stored in arrays
+  }
+}
+
+const ModernTransformStream =
+  globalThis.TransformStream ||
+  globalThis.WebStreamsPolyfill?.TransformStream ||
+  PonyfillTransformStream;
+
+/**
+ * StreamReader - reads ZIP files from a ReadableStream
+ */
+class StreamReader extends ModernTransformStream {
+  constructor() {
+    super(new StreamTransformer());
+  }
+}
+
 export default Reader;
+export { StreamReader };
