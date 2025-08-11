@@ -14,6 +14,7 @@
       - [Example using `writer.write`](#example-using-writerwrite)
       - [Incorporating other streams](#incorporating-other-streams)
     - [Reading ZIP files](#reading-zip-files)
+  - [Supporting Legacy Browsers](#supporting-legacy-browsers)
   - [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
