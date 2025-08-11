@@ -19,13 +19,9 @@ runs:
           .yarn/unplugged
           .yarn/install-state.gz
           .pnp.cjs
-        key: ${{ runner.os }}-${{ runner.arch }}-yarn-v10-${{ hashFiles('**/yarn.lock', '**/package.json') }}
+        key: ${{ runner.os }}-${{ runner.arch }}-yarn-v3-${{ hashFiles('**/yarn.lock', '**/package.json') }}
         restore-keys: |
-          ${{ runner.os }}-${{ runner.arch }}-yarn-v10-
-    - uses: nick-fields/retry@v3
-      if: steps.yarn-cache.outputs.cache-hit != 'true' || inputs.force-yarn-install == 'true'
-      with:
-        timeout_minutes: 10
-        max_attempts: 3
-        retry_on: error
-        command: yarn install --immutable
+          ${{ runner.os }}-${{ runner.arch }}-yarn-v3-
+    - run: yarn install --immutable
+      name: Install yarn deps
+      shell: bash

@@ -34,7 +34,7 @@
     "**/.pnp.*": true
   },
   "editor.codeActionsOnSave": {
-    "source.fixAll": "explicit"
+    "source.fixAll": "always"
   },
   "cSpell.words": [
     "allsettled",

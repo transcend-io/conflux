@@ -5,11 +5,11 @@ jobs:
   build-and-upload-artifacts:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: ./.github/commands/dependencies/install_yarn_deps
       - name: Build
         run: yarn build
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: build-artifact
           path: dist/
@@ -21,24 +21,24 @@ jobs:
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: ./.github/commands/dependencies/install_yarn_deps
       - run: yarn test:browserstack
 
   run-depcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: ./.github/commands/dependencies/install_yarn_deps
       - run: yarn depcheck
 
   run-pre-commits:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 100 # need the history to do a changed files check below (source, origin)
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v5
       - uses: ./.github/commands/dependencies/install_yarn_deps
       - uses: pre-commit/action@v3.0.0
 
@@ -53,10 +53,10 @@ jobs:
       - run-pre-commits
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - uses: ./.github/commands/dependencies/install_yarn_deps
       - name: Download build artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: build-artifact
           path: dist
@@ -78,10 +78,10 @@ jobs:
       - run-pre-commits
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - uses: ./.github/commands/dependencies/install_yarn_deps
       - name: Download build artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: build-artifact
           path: dist

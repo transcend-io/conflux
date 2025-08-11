@@ -9,14 +9,12 @@
   - [Examples](#examples)
   - [Usage](#usage)
     - [Importing Conflux](#importing-conflux)
-      - [Package Manager](#package-manager)
-      - [CDN](#cdn)
     - [Creating a ZIP](#creating-a-zip)
       - [Example using `ReadableStream#pipeThrough`](#example-using-readablestreampipethrough)
       - [Example using `writer.write`](#example-using-writerwrite)
       - [Incorporating other streams](#incorporating-other-streams)
     - [Reading ZIP files](#reading-zip-files)
-  - [Supporting Firefox](#supporting-firefox)
+  - [Supporting Legacy Browsers](#supporting-legacy-browsers)
   - [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -43,7 +41,7 @@
 
 ## Blazing Fast
 
-- ~100 kB import
+- ~55 kB import
 - Uses streams, minimizing memory overhead
 
 ## Compatibility
@@ -64,30 +62,13 @@
 
 ### Importing Conflux
 
-#### Package Manager
-
 ```sh
-# With Yarn
-yarn add @transcend-io/conflux
-
-# With NPM
 npm install --save @transcend-io/conflux
 ```
 
 ```js
 // Reader parses zip files, Writer builds zip files
 import { Reader, Writer } from '@transcend-io/conflux';
-```
-
-#### CDN
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/@transcend-io/conflux@3"></script>
-```
-
-```js
-// Reader parses zip files, Writer builds zip files
-const { Reader, Writer } = window.conflux;
 ```
 
 ### Creating a ZIP
@@ -98,7 +79,7 @@ const { Reader, Writer } = window.conflux;
 import { Writer } from '@transcend-io/conflux';
 import streamSaver from 'streamsaver';
 
-const s3 = 'https://s3-us-west-2.amazonaws.com/bencmbrook/';
+const s3 = 'https://s3-us-west-2.amazonaws.com/your-bucket/';
 const files = ['NYT.txt', 'water.png', 'Earth.jpg'].values();
 
 const myReadable = new ReadableStream({
@@ -165,7 +146,7 @@ const fileStream = streamSaver.createWriteStream('conflux.zip');
   });
 
   const imgStream = await fetch(
-    'https://s3-us-west-2.amazonaws.com/bencmbrook/Earth.jpg',
+    'https://s3-us-west-2.amazonaws.com/your-bucket/Earth.jpg',
   ).then((r) => r.body);
 
   writer.write({
@@ -195,64 +176,15 @@ fetch('https://cdn.jsdelivr.net/gh/Stuk/jszip/test/ref/deflate.zip').then(
 );
 ```
 
-### Reading ZIP files from a stream
+## Supporting Legacy Browsers
 
-#### Example using `ReadableStream#pipeThrough`
+Conflux is compatible with all modern browsers since June 2022.
 
-<!-- prettier-ignore -->
-```js
-import { StreamReader } from '@transcend-io/conflux';
-import streamSaver from 'streamsaver';
+If you need to support legacy browsers, you can add polyfills for:
 
-// Fetch a ZIP file from a remote source
-const zipUrl = '/some-large.zip';
-const response = await fetch(zipUrl);
-
-// Extract files with StreamReader (a TransformStream)
-response.body
-  .pipeThrough(new StreamReader())
-  .pipeTo(
-    new WritableStream({
-      // The StreamReader emits each file's name and a stream containing its contents
-      async write({ name, stream }) {
-        console.log(`Extracting: ${name}`);
-
-        // Save each extracted file, also with streams
-        const fileStream = stream();
-        await fileStream
-          .pipeTo(
-            streamSaver.createWriteStream(name)
-          );
-      },
-    }),
-  );
-```
-
-## Supporting Firefox
-
-Firefox [does not support ReadableStream#pipeThrough](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream#browser_compatibility), since it does not have `WritableStream` or `TransformStream` support yet. Conflux ponyfills `TransformStream` out of the box in Firefox, but if you're using the `myReadable.pipeThrough` and plan to support Firefox, you'll want to ponyfill `ReadableStream` like so:
-
-```js
-import { ReadableStream as ReadableStreamPonyfill } from 'web-streams-polyfill/ponyfill';
-
-// Support Firefox with a ponyfill on ReadableStream to add .pipeThrough
-const ModernReadableStream = window.WritableStream
-  ? window.ReadableStream
-  : ReadableStreamPonyfill;
-
-const myReadable = new ModernReadableStream({
-  async pull(controller) {
-    return controller.enqueue({
-      name: `/firefox.txt`,
-      stream: () => new Response.body('Firefox works!'),
-    });
-  },
-});
-
-myReadable
-  .pipeThrough(new Writer()) // see "Supporting Firefox" below
-  .pipeTo(streamSaver.createWriteStream('conflux.zip'));
-```
+- [`TransformStream`](https://developer.mozilla.org/en-US/docs/Web/API/TransformStream), and [`WritableStream`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream) (available in browsers since June 2022) by adding [web-streams-polyfill](https://www.npmjs.com/package/web-streams-polyfill).
+- [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) (available in browsers since January 2020) by setting `globalThis.JSBI` equal to [JSBI](https://github.com/GoogleChromeLabs/jsbi) before importing Conflux.
+- [`globalThis`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/globalThis) (available in browsers since January 2020) by adding a polyfill like this [globalthis](https://www.npmjs.com/package/globalthis) or manually setting a shim.
 
 ## License
 
