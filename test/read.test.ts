@@ -3,7 +3,7 @@
 import { assert } from '@esm-bundle/chai';
 import { Reader } from '../src/index.js';
 import type { Entry } from '../src/read.js';
-import fixtures from './load-fixtures.js';
+import { fixtures } from './load-fixtures.js';
 
 async function isSmiley(entry: Entry) {
   const a1 = await entry.arrayBuffer();

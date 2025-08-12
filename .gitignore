@@ -20,6 +20,10 @@ dist
 stats.json
 schema.json
 
+# Tshy
+.tshy
+.tshy-build
+
 # Storybook build
 .storybook-dist
 

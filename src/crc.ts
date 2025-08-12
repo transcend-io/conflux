@@ -11,7 +11,7 @@ function generateCrcTable(): number[] {
   return table;
 }
 
-class Crc32 {
+export class Crc32 {
   private crc: number;
   private static readonly table: number[] = generateCrcTable();
 
@@ -44,5 +44,3 @@ class Crc32 {
     return (this.crc ^ -1) >>> 0;
   }
 }
-
-export default Crc32;

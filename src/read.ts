@@ -6,8 +6,8 @@
  * @license MIT
  */
 import { Inflate } from 'pako';
-import JSBI from './bigint.js';
-import Crc32 from './crc.js';
+import { JSBI } from './bigint.js';
+import { Crc32 } from './crc.js';
 
 const ERR_BAD_FORMAT = 'File format is not recognized.';
 const ZIP_COMMENT_MAX = 65_536;
@@ -25,7 +25,7 @@ const uint16LittleEndian = (b: Uint8Array, n: number): number => {
   return b1 | (b2 << 8);
 };
 
-export type FileLike = Pick<File, 'slice' | 'stream' | 'arrayBuffer' | 'size'>;
+type FileLike = Pick<File, 'slice' | 'stream' | 'arrayBuffer' | 'size'>;
 
 class Entry {
   dataView: DataView;
@@ -312,7 +312,9 @@ function getBigInt64(
   return value;
 }
 
-async function* Reader(file: FileLike): AsyncGenerator<Entry, void, unknown> {
+export async function* Reader(
+  file: FileLike,
+): AsyncGenerator<Entry, void, unknown> {
   // Seek EOCDR - "End of central directory record" is the last part of a zip archive, and is at least 22 bytes long.
   // Zip file comment is the last part of EOCDR and has max length of 64KB,
   // so we only have to search the last 64K + 22 bytes of a archive for EOCDR signature (0x06054b50).
@@ -403,5 +405,3 @@ async function* Reader(file: FileLike): AsyncGenerator<Entry, void, unknown> {
     totalSize += size;
   }
 }
-
-export default Reader;

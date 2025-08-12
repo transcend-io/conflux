@@ -5,8 +5,8 @@
  * @author Transcend Inc. <https://transcend.io>
  * @license MIT
  */
-import JSBI from './bigint.js';
-import Crc32 from './crc.js';
+import { JSBI } from './bigint.js';
+import { Crc32 } from './crc.js';
 
 const encoder = new TextEncoder();
 
@@ -193,10 +193,8 @@ class ZipTransformer {
   }
 }
 
-class Writer extends TransformStream<ZipTransformerEntry, Uint8Array> {
+export class Writer extends TransformStream<ZipTransformerEntry, Uint8Array> {
   constructor() {
     super(new ZipTransformer());
   }
 }
-
-export default Writer;

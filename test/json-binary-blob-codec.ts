@@ -1,4 +1,4 @@
-const jsonBinaryBlobCodec = (): {
+export const jsonBinaryBlobCodec = ((): {
   replacer: (key: string, value: Uint8Array) => unknown;
   reviver: (key: string, value: unknown) => unknown;
 } => {
@@ -51,6 +51,4 @@ const jsonBinaryBlobCodec = (): {
       return new Blob([arrayBuffer]);
     },
   };
-};
-
-export default jsonBinaryBlobCodec();
+})();

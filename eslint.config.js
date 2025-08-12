@@ -42,7 +42,7 @@ const eslintConfig = tseslint.config(
     },
   },
   {
-    ignores: ['dist', '.build', 'coverage'],
+    ignores: ['dist', '.build', '.tsy', '.tshy-build', 'coverage'],
   },
 );
 

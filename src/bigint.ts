@@ -64,7 +64,5 @@ if (!(self.BigInt as unknown) && !self.JSBI) {
  * @see https://github.com/GoogleChromeLabs/jsbi - JSBI library for why BigInt
  * @see https://github.com/GoogleChromeLabs/jsbi/blob/master/jsbi.d.ts - types
  */
-const jsbi: JSBI =
+export const JSBI: JSBI =
   !(self.BigInt as unknown) && self.JSBI ? self.JSBI : jsbiShim;
-
-export default jsbi;
