@@ -7,9 +7,11 @@
     // tooling, e.g. eslint.config.js, prettier.config.js
     "*.config.js",
     "*.config.ts",
-    "test/fixtures/**/*.ts",
-    "test/fixtures/files/fixtures.json",
+    "scripts/**/*",
     "package.json"
   ],
-  "references": [{ "path": "./tsconfig.web.json" }]
+  "references": [
+    { "path": "./tsconfig.web.json" },
+    { "path": "./tsconfig.test.json" }
+  ]
 }

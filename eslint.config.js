@@ -31,6 +31,7 @@ const eslintConfig = tseslint.config(
       ],
       'unicorn/no-null': 'off',
       'unicorn/no-nested-ternary': 'off',
+      'unicorn/number-literal-case': 'off',
       '@typescript-eslint/no-unnecessary-condition': [
         'error',
         {

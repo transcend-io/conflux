@@ -38,7 +38,7 @@ const config = {
   concurrentBrowsers: 3,
   coverage: true,
   coverageConfig: {
-    include: ['src/**/*.ts', 'wasm/**/*.ts'],
+    include: ['src/**/*.ts'],
     report: true,
     reportDir: 'coverage',
   },

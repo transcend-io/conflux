@@ -3,9 +3,6 @@
   "compilerOptions": {
     "types": ["mocha"]
   },
-  "include": ["test/**/*", "test/fixtures/files/fixtures.json"],
-  "references": [
-    { "path": "./tsconfig.web.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+  "include": ["test/**/*", "test/fixtures.json"],
+  "references": [{ "path": "./tsconfig.web.json" }]
 }

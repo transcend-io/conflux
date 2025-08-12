@@ -10,3 +10,4 @@ LICENSE
 fixtures/files
 example/files.js
 pnpm-lock.yaml
+test/fixtures.json

@@ -1,8 +1,6 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-## Table of Contents
-
 - [Conflux](#conflux)
   - [Blazing Fast](#blazing-fast)
   - [Compatibility](#compatibility)
@@ -10,9 +8,6 @@
   - [Usage](#usage)
     - [Importing Conflux](#importing-conflux)
     - [Creating a ZIP](#creating-a-zip)
-      - [Example using `ReadableStream#pipeThrough`](#example-using-readablestreampipethrough)
-      - [Example using `writer.write`](#example-using-writerwrite)
-      - [Incorporating other streams](#incorporating-other-streams)
     - [Reading ZIP files](#reading-zip-files)
   - [Supporting Legacy Browsers](#supporting-legacy-browsers)
   - [License](#license)

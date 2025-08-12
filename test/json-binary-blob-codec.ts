@@ -1,22 +1,26 @@
-/* eslint-disable no-var, no-unused-expressions, no-restricted-globals,vars-on-top,prefer-destructuring,block-scoped-var,no-shadow */
-const mod = () =>
-  ((types, b64) => ({
-    replacer(key) {
-      const val = this[key];
-      return ArrayBuffer.isView(val)
-        ? { $d: b64.encode(new Uint8Array(val)) }
-        : val;
+/* eslint-disable unicorn/prefer-code-point */
+const jsonBinaryBlobCodec = (): {
+  replacer: (key: string, value: Uint8Array) => unknown;
+  reviver: (key: string, value: unknown) => unknown;
+} =>
+  // eslint-disable-next-line unicorn/no-unreadable-iife
+  ((_types, b64) => ({
+    replacer(this: Record<string, Uint8Array>, key: string) {
+      const replacerValue = this[key];
+      return ArrayBuffer.isView(replacerValue)
+        ? { $d: b64.encode(new Uint8Array(replacerValue.buffer)) }
+        : replacerValue;
     },
-    reviver: (key, val) => {
-      if (val === null && val !== 'object') {
-        return val;
+    reviver: (_key: string, reviverValue: unknown) => {
+      if (reviverValue === null || typeof reviverValue !== 'object') {
+        return reviverValue;
       }
 
-      if (val.$d) {
-        return new Blob([b64.decode(val.$d)]);
+      if (!('$d' in reviverValue) || typeof reviverValue.$d !== 'string') {
+        return reviverValue;
       }
 
-      return val;
+      return new Blob([b64.decode(reviverValue.$d)]);
     },
   }))(
     [],
@@ -27,7 +31,7 @@ const mod = () =>
         105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118,
         119, 120, 121, 122, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 45, 95, 61,
       ];
-      const h = [
+      const h: (number | null)[] = [
         null,
         null,
         null,
@@ -155,46 +159,58 @@ const mod = () =>
         null,
       ];
       return {
-        decode(a) {
+        decode(a: string) {
           let b = a.length % 4;
-          // eslint-disable-next-line no-param-reassign
-          b && (a += Array(5 - b).join('='));
+          if (b) {
+            // eslint-disable-next-line unicorn/new-for-builtins
+            a += Array(5 - b).join('=');
+          }
           b = -1;
           const f = new ArrayBuffer((a.length / 4) * 3);
           let d;
+          // eslint-disable-next-line unicorn/prevent-abbreviations
           const e = new Uint8Array(f);
           let c = 0;
           for (d = a.length; ++b < d; ) {
             let g = h[a.charCodeAt(b)];
             let k = h[a.charCodeAt(++b)];
+            // @ts-expect-error - ignoring
             e[c++] = (g << 2) | (k >> 4);
             g = h[a.charCodeAt(++b)];
             if (g === 64) break;
+            // @ts-expect-error - ignoring
             e[c++] = ((k & 15) << 4) | (g >> 2);
             k = h[a.charCodeAt(++b)];
             if (k === 64) break;
+            // @ts-expect-error - ignoring
             e[c++] = ((g & 3) << 6) | k;
           }
           return new Uint8Array(f, 0, c);
         },
-        encode(a) {
-          for (
-            var b = -1,
-              h = a.length,
-              d = new Uint8Array(new ArrayBuffer(Math.ceil((4 * h) / 3))),
-              e = 0;
-            ++b < h;
-
-          ) {
+        encode(a: Uint8Array) {
+          // eslint-disable-next-line unicorn/prevent-abbreviations
+          let e = 0;
+          const h = a.length;
+          const d = new Uint8Array(new ArrayBuffer(Math.ceil((4 * h) / 3)));
+          for (let b = -1; ++b < h; ) {
             let c = a[b];
             const g = a[++b];
+            // @ts-expect-error - ignoring
             d[e++] = f[c >> 2];
+            // @ts-expect-error - ignoring
             d[e++] = f[((c & 3) << 4) | (g >> 4)];
-            isNaN(g)
-              ? ((d[e++] = f[64]), (d[e++] = f[64]))
-              : ((c = a[++b]),
-                (d[e++] = f[((g & 15) << 2) | (c >> 6)]),
-                (d[e++] = f[isNaN(c) ? 64 : c & 63]));
+            if (Number.isNaN(g)) {
+              // @ts-expect-error - ignoring
+              d[e++] = f[64];
+              // @ts-expect-error - ignoring
+              d[e++] = f[64];
+            } else {
+              c = a[++b];
+              // @ts-expect-error - ignoring
+              d[e++] = f[((g & 15) << 2) | (c >> 6)];
+              // @ts-expect-error - ignoring
+              d[e++] = f[Number.isNaN(c) ? 64 : c & 63];
+            }
           }
           return new TextDecoder().decode(d);
         },
@@ -202,11 +218,4 @@ const mod = () =>
     })(),
   );
 
-// // Exports for both ESM and CJS. This is imported by both the browser during Karma tests for fixture loading, and Node during fixture generation.
-// Object.defineProperty(exports, '__esModule', {
-//   value: true,
-// });
-
-// exports.default = mod;
-export default mod; // TODO: address the Node import issue. This will break when running "yarn rebuild-fixtures"
-/* eslint-enable no-var, no-unused-expressions,no-restricted-globals,vars-on-top,prefer-destructuring,block-scoped-var,no-shadow */
+export default jsonBinaryBlobCodec();

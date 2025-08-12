@@ -1,19 +1,21 @@
-import resolve from '@rollup/plugin-node-resolve';
-import pkg from './package.json' with { type: 'json' };
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
+import packageJson from './package.json' with { type: 'json' };
 
 export default [
   // browser-friendly UMD build
   {
-    input: 'src/index.js',
+    input: 'src/index.ts',
     output: [
       {
         name: 'conflux',
-        file: pkg.main,
+        file: packageJson.main,
         format: 'umd',
       },
     ],
     plugins: [
-      resolve(), // so Rollup can find package dependencies
+      nodeResolve(), // so Rollup can find package dependencies
+      typescript(),
     ],
   },
 
@@ -24,11 +26,12 @@ export default [
   // an array for the `output` option, where we can specify
   // `file` and `format` for each target)
   {
-    input: 'src/index.js',
+    input: 'src/index.ts',
     external: [/pako/],
     output: [
       // { file: pkg.main, format: 'cjs' }, // don't need a Node import yet
-      { file: pkg.module, format: 'es' },
+      { file: packageJson.module, format: 'es' },
     ],
+    plugins: [typescript()],
   },
 ];

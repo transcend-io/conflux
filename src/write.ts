@@ -10,10 +10,34 @@ import Crc32 from './crc.js';
 
 const encoder = new TextEncoder();
 
+interface ZipTransformerEntry {
+  directory?: boolean;
+  name: string;
+  comment?: string;
+  lastModified?: number;
+  stream?: () => ReadableStream<Uint8Array>;
+}
+
+export type { ZipTransformerEntry };
+
+interface ZipObject {
+  directory: boolean;
+  nameBuf: Uint8Array;
+  offset: bigint;
+  comment: Uint8Array;
+  compressedLength: bigint;
+  uncompressedLength: bigint;
+  header: Uint8Array;
+  crc?: Crc32;
+}
+
 class ZipTransformer {
+  files: Record<string, ZipObject>;
+  offset: bigint;
+
   constructor() {
     /* The files zipped */
-    this.files = Object.create(null);
+    this.files = Object.create(null) as Record<string, ZipObject>;
     /* The current position of the zipped output stream, in bytes */
     this.offset = JSBI.BigInt(0);
   }
@@ -21,11 +45,14 @@ class ZipTransformer {
   /**
    * Transforms a stream of files into one zipped file
    *
-   * @param  {File}  entry [description]
-   * @param  {ReadableStreamDefaultController}  ctrl
-   * @return {Promise}       [description]
+   * @param  entry - The file to zip
+   * @param  ctrl - The controller for the transform stream
+   * @returns A promise that resolves when the file has been transformed
    */
-  async transform(entry, ctrl) {
+  async transform(
+    entry: ZipTransformerEntry,
+    ctrl: TransformStreamDefaultController<Uint8Array>,
+  ): Promise<void> {
     // Set the File name, ensuring that if it's a directory, it ends with `/`
     const name =
       entry.directory && !entry.name.trim().endsWith('/')
@@ -33,7 +60,9 @@ class ZipTransformer {
         : entry.name.trim();
 
     // Abort if this a file with this name already exists
-    if (this.files[name]) ctrl.abort(new Error('File already exists.'));
+    if (this.files[name]) {
+      ctrl.error(new Error('File already exists.'));
+    }
 
     // TextEncode the name
     const nameBuf = encoder.encode(name);
@@ -42,7 +71,7 @@ class ZipTransformer {
       directory: !!entry.directory,
       nameBuf,
       offset: this.offset,
-      comment: encoder.encode(entry.comment || ''),
+      comment: encoder.encode(entry.comment ?? ''),
       compressedLength: JSBI.BigInt(0),
       uncompressedLength: JSBI.BigInt(0),
       header: new Uint8Array(26),
@@ -52,17 +81,13 @@ class ZipTransformer {
     const { header } = zipObject;
 
     // Set the date, with fallback to current date
-    const date = new Date(
-      typeof entry.lastModified === 'undefined'
-        ? Date.now()
-        : entry.lastModified,
-    );
+    const date = new Date(entry.lastModified ?? Date.now());
 
     // The File header DataView
     const hdv = new DataView(header.buffer);
     const data = new Uint8Array(30 + nameBuf.length);
 
-    hdv.setUint32(0, 0x14000808);
+    hdv.setUint32(0, 0x14_00_08_08);
     hdv.setUint16(
       6,
       (((date.getHours() << 6) | date.getMinutes()) << 5) |
@@ -90,7 +115,6 @@ class ZipTransformer {
       zipObject.crc = new Crc32();
       const reader = entry.stream().getReader();
 
-      // eslint-disable-next-line no-constant-condition
       while (true) {
         const it = await reader.read();
         if (it.done) break;
@@ -124,35 +148,39 @@ class ZipTransformer {
   }
 
   /**
-   * @param  {ReadableStreamDefaultController} ctrl
+   * @param  ctrl - The controller for the transform stream
    */
-  flush(ctrl) {
+  flush(ctrl: TransformStreamDefaultController<Uint8Array>): void {
     let length = 0;
     let index = 0;
-    let file;
+    let file: ZipObject | undefined;
 
-    Object.keys(this.files).forEach((fileName) => {
+    for (const fileName of Object.keys(this.files)) {
       file = this.files[fileName];
-      length += 46 + file.nameBuf.length + file.comment.length;
-    });
+      if (file) {
+        length += 46 + file.nameBuf.length + file.comment.length;
+      }
+    }
 
     const data = new Uint8Array(length + 22);
     const dv = new DataView(data.buffer);
 
-    Object.keys(this.files).forEach((fileName) => {
+    for (const fileName of Object.keys(this.files)) {
       file = this.files[fileName];
-      dv.setUint32(index, 0x504b0102);
-      dv.setUint16(index + 4, 0x1400);
-      dv.setUint16(index + 32, file.comment.length, true);
-      dv.setUint8(index + 38, file.directory ? 16 : 0);
-      dv.setUint32(index + 42, JSBI.toNumber(file.offset), true);
-      data.set(file.header, index + 6);
-      data.set(file.nameBuf, index + 46);
-      data.set(file.comment, index + 46 + file.nameBuf.length);
-      index += 46 + file.nameBuf.length + file.comment.length;
-    });
+      if (file) {
+        dv.setUint32(index, 0x50_4b_01_02);
+        dv.setUint16(index + 4, 0x14_00);
+        dv.setUint16(index + 32, file.comment.length, true);
+        dv.setUint8(index + 38, file.directory ? 16 : 0);
+        dv.setUint32(index + 42, JSBI.toNumber(file.offset), true);
+        data.set(file.header, index + 6);
+        data.set(file.nameBuf, index + 46);
+        data.set(file.comment, index + 46 + file.nameBuf.length);
+        index += 46 + file.nameBuf.length + file.comment.length;
+      }
+    }
 
-    dv.setUint32(index, 0x504b0506);
+    dv.setUint32(index, 0x50_4b_05_06);
     dv.setUint16(index + 8, Object.keys(this.files).length, true);
     dv.setUint16(index + 10, Object.keys(this.files).length, true);
     dv.setUint32(index + 12, length, true);
@@ -160,12 +188,12 @@ class ZipTransformer {
     ctrl.enqueue(data);
 
     // cleanup
-    this.files = Object.create(null);
-    this.offset = 0;
+    this.files = Object.create(null) as Record<string, ZipObject>;
+    this.offset = JSBI.BigInt(0);
   }
 }
 
-class Writer extends TransformStream {
+class Writer extends TransformStream<ZipTransformerEntry, Uint8Array> {
   constructor() {
     super(new ZipTransformer());
   }
