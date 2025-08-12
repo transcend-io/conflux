@@ -274,7 +274,6 @@ $RECYCLE.BIN/
 src/migrations/schemas/snapshot-*
 
 # Docs
-/docs/
 Internal-Documentation/
 checks.json
 /internals/generators/
