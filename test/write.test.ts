@@ -34,22 +34,30 @@ const folder = { name: 'folder/', directory: true };
 
 it('Writing - All in one big test', async () => {
   const { readable, writable } = new Writer();
-  const writer = writable.getWriter();
-  await writer.write(helloWorld);
-  await writer.write(fileLikeUtf8);
-  await writer.write(folder);
-  await writer.close();
 
-  const chunks = [];
-  const reader = readable.getReader();
-  for (;;) {
-    const v = await reader.read();
-    if (v.done) break;
-    chunks.push(v.value);
-  }
+  const reading = (async () => {
+    const chunks = [];
+    const reader = readable.getReader();
+    for (;;) {
+      const v = await reader.read();
+      if (v.done) break;
+      chunks.push(v.value);
+    }
+    return new Blob(chunks as BlobPart[]);
+  })();
+
+  const writing = (async () => {
+    const writer = writable.getWriter();
+    await writer.write(helloWorld);
+    await writer.write(fileLikeUtf8);
+    await writer.write(folder);
+    await writer.close();
+  })();
+
+  const [blob] = await Promise.all([reading, writing]);
 
   let entry: Entry;
-  const it = Reader(new Blob(chunks as BlobPart[]));
+  const it = Reader(blob);
 
   // entry 1, Writer accepts native File object
   entry = (await it.next()).value as Entry;
