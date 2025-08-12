@@ -22,7 +22,11 @@ class Crc32 {
   public append(data: Uint8Array): void {
     let crc = Math.trunc(this.crc);
     const { table } = Crc32;
-    for (let offset = 0, length = Math.trunc(data.length); offset < length; offset++) {
+    for (
+      let offset = 0, length = Math.trunc(data.length);
+      offset < length;
+      offset++
+    ) {
       const byte = data[offset];
       if (byte === undefined) {
         continue;
