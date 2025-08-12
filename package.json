@@ -4,8 +4,6 @@
   "type": "module",
   "description": "Build zip files out of readable streams in the browser",
   "main": "./dist/commonjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/commonjs/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
