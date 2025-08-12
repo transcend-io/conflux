@@ -1,0 +1,99 @@
+name: ci
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/commands/dependencies/install_deps
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Publint
+        run: pnpm dlx publint
+
+      - name: Are the types wrong?
+        run: |
+          pnpm dlx @arethetypeswrong/cli --pack -f json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact
+          path: dist/**
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 100 # need the history to do a changed files check below (source, origin)    
+      - uses: ./.github/commands/dependencies/install_deps
+
+      - name: Run lint
+        run: pnpm run lint
+
+      - name: Format
+        run: pnpm run format
+
+      - name: Ensure no changed files
+        run: git diff --exit-code
+
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.0
+        with:
+          extra_args: --source ${{ github.event.pull_request.base.sha || 'HEAD~1' }} --origin ${{ github.event.pull_request.head.sha || 'HEAD' }}
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/commands/dependencies/install_deps
+
+      - name: Install Playwright browsers
+        run: pnpm dlx playwright install --with-deps
+
+      - name: Run tests
+        run: pnpm run test
+
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    needs:
+      - build
+      - lint
+      - test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: ./.github/commands/dependencies/install_deps
+
+      - name: Download Build 
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: dist/
+
+      - name: Ensure no changed files
+        run: git diff --exit-code
+
+      - name: Configure npm authentication
+        run: |
+          pnpm config set always-auth true
+          pnpm config set //registry.npmjs.org/:_authToken "${{ secrets.NPM_TOKEN }}"
+
+      - name: Publish to npm
+        run: pnpm publish
+
+      - name: Configure GitHub Packages authentication
+        run: |
+          pnpm config set always-auth true
+          pnpm config set registry https://npm.pkg.github.com
+          pnpm config set //npm.pkg.github.com/:_authToken "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Publish to GitHub Packages
+        run: pnpm publish

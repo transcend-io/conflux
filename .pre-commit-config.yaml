@@ -1,0 +1,41 @@
+# See http://pre-commit.com for more information
+# See http://pre-commit.com/hooks.html for more hooks
+exclude: (pnpm-lock.yaml|node_modules/|dist/|build/)
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.5.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-added-large-files
+      - id: check-json
+        exclude: (.vscode/|tsconfig.json|tsconfig.*.json)
+      - id: detect-private-key
+      - id: detect-aws-credentials
+        args: [--allow-missing-credentials]
+      - id: check-yaml
+        files: (yaml$|yml$)
+
+  - repo: local
+    hooks:
+      - id: lint
+        name: Lint
+        description: 'Code linting'
+        entry: pnpm run lint
+        language: node
+        types_or: [javascript, jsx, ts, tsx, markdown, json]
+        # Just run global `pnpm run lint` without passing filenames
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: format
+        name: Format
+        description: 'Code formatting'
+        entry: pnpm run format
+        language: node
+        types_or: [javascript, jsx, ts, tsx, markdown, json]
+        # Just run global `pnpm run format` without passing filenames
+        pass_filenames: false
