@@ -1,0 +1,31 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "always"
+  },
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "javascript.preferences.quoteStyle": "single",
+  "typescript.preferences.quoteStyle": "single",
+  "search.exclude": {
+    "**/tsconfig.tsbuildinfo": true,
+    "node_modules": true,
+    "**/LICENSE": true,
+    "pnpm-lock.yaml": true
+  },
+  "workbench.iconTheme": "vscode-icons",
+  "todohighlight.keywords": [
+    "TODO",
+    "todo",
+    "fixme",
+    "FIXME",
+    "NOT IMPLEMENTED",
+    "NotImplementedError"
+  ],
+  "todohighlight.isEnable": true
+}
