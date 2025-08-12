@@ -1,6 +1,6 @@
 {
   "name": "@transcend-io/conflux",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "type": "module",
   "description": "Build zip files out of readable streams in the browser",
   "main": "./dist/commonjs/index.js",
@@ -31,35 +31,6 @@
     "rebuild-fixtures": "tsx scripts/rebuild-fixtures.ts",
     "prepublishOnly": "pnpm lint && pnpm run build"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/transcend-io/conflux.git"
-  },
-  "keywords": [
-    "zip",
-    "browser",
-    "streams",
-    "readable",
-    "files",
-    "whatwg"
-  ],
-  "contributors": [
-    {
-      "name": "Jimmy Wärting",
-      "email": "jimmy@warting.se",
-      "url": "https://github.com/jimmywarting"
-    },
-    {
-      "name": "Eli Grey",
-      "email": "eli@transcend.io",
-      "url": "https://github.com/eligrey"
-    },
-    {
-      "name": "Ben Brook",
-      "email": "ben@transcend.io",
-      "url": "https://github.com/bencmbrook"
-    }
-  ],
   "files": [
     "dist/**/*",
     "src/**/*"
@@ -100,5 +71,34 @@
   "bugs": {
     "url": "https://github.com/transcend-io/conflux/issues"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/transcend-io/conflux.git"
+  },
+  "keywords": [
+    "zip",
+    "browser",
+    "streams",
+    "readable",
+    "files",
+    "whatwg"
+  ],
+  "contributors": [
+    {
+      "name": "Jimmy Wärting",
+      "email": "jimmy@warting.se",
+      "url": "https://github.com/jimmywarting"
+    },
+    {
+      "name": "Eli Grey",
+      "email": "eli@transcend.io",
+      "url": "https://github.com/eligrey"
+    },
+    {
+      "name": "Ben Brook",
+      "email": "ben@transcend.io",
+      "url": "https://github.com/bencmbrook"
+    }
+  ],
   "homepage": "https://github.com/transcend-io/conflux#readme"
 }
