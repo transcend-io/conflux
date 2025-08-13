@@ -1,43 +1,26 @@
+# Conflux
+
+Build and read zip files with whatwg streams in the browser.
+
+<p>
+  <a href="https://snyk.io//test/github/transcend-io/conflux?targetFile=package.json"><img src="https://snyk.io//test/github/transcend-io/conflux/badge.svg?targetFile=package.json" alt="Known Vulnerabilities"></a>
+  <a href="https://app.fossa.io/projects/git%2Bgithub.com%2Ftranscend-io%2Fconflux?ref=badge_shield" alt="FOSSA Status"><img src="https://app.fossa.io/api/projects/git%2Bgithub.com%2Ftranscend-io%2Fconflux.svg?type=shield"/></a>
+</p>
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-## Table of Contents
-
-- [Conflux](#conflux)
-  - [Blazing Fast](#blazing-fast)
-  - [Compatibility](#compatibility)
-  - [Examples](#examples)
-  - [Usage](#usage)
-    - [Importing Conflux](#importing-conflux)
-    - [Creating a ZIP](#creating-a-zip)
-      - [Example using `ReadableStream#pipeThrough`](#example-using-readablestreampipethrough)
-      - [Example using `writer.write`](#example-using-writerwrite)
-      - [Incorporating other streams](#incorporating-other-streams)
-    - [Reading ZIP files](#reading-zip-files)
-  - [Supporting Legacy Browsers](#supporting-legacy-browsers)
-  - [License](#license)
+- [Blazing Fast](#blazing-fast)
+- [Compatibility](#compatibility)
+- [Examples](#examples)
+- [Usage](#usage)
+  - [Importing Conflux](#importing-conflux)
+  - [Creating a ZIP](#creating-a-zip)
+  - [Reading ZIP files](#reading-zip-files)
+- [Supporting Legacy Browsers](#supporting-legacy-browsers)
+- [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-<p align="center">
-  <img alt="Conflux by Transcend" src="https://user-images.githubusercontent.com/7354176/61584253-73ecfb00-aaf9-11e9-91a5-a62e5ba6efc6.png"/>
-</p>
-<h1 align="center">Conflux</h1>
-<p align="center">
-  <strong>Build and read zip files with whatwg streams in the browser.</strong>
-  <br /><br />
-  <span>/ˈkänˌfləks/</span>
-  (<i>noun</i>)<span> a flowing together of two or more streams</span><br /><br />
-  <br /><br />
-<!--   <a href="https://travis-ci.com/transcend-io/conflux"><img src="https://travis-ci.com/transcend-io/conflux.svg?branch=master" alt="Build Status"></a> -->
-<!--   <a href="https://automate.browserstack.com/public-build/NFlXc0MvaDRGQXVzSTNyY0lMbCtWM2RyekZsazZIaGRlQjl3cUxvQzFGTT0tLUkreEdTNUp1WGZvbkVVTUx3L1V1S1E9PQ==--3a59d2846f42b6c70d7873868ea6798a093f76e8"><img src='https://automate.browserstack.com/badge.svg?badge_key=OHUrN1VyL0FVdDhFUU9CQVJja0tMeHNEU0hsUzROUG9kSkt4MlA5MndYQT0tLWVuMDJMN01oeCtDM1lTN3ZFd1hSdnc9PQ==--0938f2738c3e2fca8e74a5365c4394a0710eee7a'/></a> -->
-  <a href="https://snyk.io//test/github/transcend-io/conflux?targetFile=package.json"><img src="https://snyk.io//test/github/transcend-io/conflux/badge.svg?targetFile=package.json" alt="Known Vulnerabilities"></a>
-<a href="https://app.fossa.io/projects/git%2Bgithub.com%2Ftranscend-io%2Fconflux?ref=badge_shield" alt="FOSSA Status"><img src="https://app.fossa.io/api/projects/git%2Bgithub.com%2Ftranscend-io%2Fconflux.svg?type=shield"/></a>
-<!--   <a href="https://codecov.io/gh/transcend-io/conflux"><img src="https://codecov.io/gh/transcend-io/conflux/branch/master/graph/badge.svg" alt="Code Coverage"></a> -->
-  <!-- <a href="https://codeclimate.com/github/transcend-io/conflux/maintainability"><img src="https://api.codeclimate.com/v1/badges/ec9cfcc2963755b30c0d/maintainability" /></a> -->
-  <br /><br />
-</p>
-<br />
 
 ## Blazing Fast
 

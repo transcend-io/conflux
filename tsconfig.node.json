@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": [
+    // tooling, e.g. eslint.config.js, prettier.config.js
+    "*.config.js",
+    "*.config.ts",
+    "scripts/**/*",
+    "package.json"
+  ],
+  "references": [
+    { "path": "./tsconfig.web.json" },
+    { "path": "./tsconfig.test.json" }
+  ]
+}

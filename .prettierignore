@@ -1,2 +1,13 @@
 *.yml
-dist/
+.eslintignore
+.npmignore
+LICENSE
+.prettierignore
+.airtaprc
+.gitignore
+.editorconfig
+.browserslistrc
+fixtures/files
+example/files.js
+pnpm-lock.yaml
+test/fixtures.json

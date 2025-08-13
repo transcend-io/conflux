@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["mocha"]
+  },
+  "include": ["test/**/*", "test/fixtures.json"],
+  "references": [{ "path": "./tsconfig.web.json" }]
+}
