@@ -4,8 +4,7 @@ import { jsonBinaryBlobCodec } from '../test/json-binary-blob-codec.js';
 
 const { replacer } = jsonBinaryBlobCodec;
 
-const pathname = new URL(import.meta.url).pathname;
-const __dirname = path.dirname(pathname);
+const __dirname = import.meta.dirname;
 
 const files = await fs.readdir(path.resolve(__dirname, '../test/fixture'));
 const fixtures: Record<string, Uint8Array> = {};
