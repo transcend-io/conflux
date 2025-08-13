@@ -62,6 +62,7 @@ class ZipTransformer {
     // Abort if this a file with this name already exists
     if (this.files[name]) {
       ctrl.error(new Error('File already exists.'));
+      return;
     }
 
     // TextEncode the name
