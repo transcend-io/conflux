@@ -25,7 +25,11 @@ const uint16LittleEndian = (b: Uint8Array, n: number): number => {
   return b1 | (b2 << 8);
 };
 
-type FileLike = Pick<File, 'slice' | 'stream' | 'arrayBuffer' | 'size'>;
+/**
+ * FileLike is the input argument to the Reader.
+ * It is essentially `Blob`, and both `Blob` and `File` are assignable to FileLike.
+ */
+type FileLike = File | Blob;
 
 class Entry {
   dataView: DataView;

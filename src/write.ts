@@ -157,9 +157,12 @@ class ZipTransformer {
 
     for (const fileName of Object.keys(this.files)) {
       file = this.files[fileName];
-      if (file) {
-        length += 46 + file.nameBuf.length + file.comment.length;
+      if (!file) {
+        throw new TypeError(
+          `File not found while flushing ZipTransformer: ${fileName}`,
+        );
       }
+      length += 46 + file.nameBuf.length + file.comment.length;
     }
 
     const data = new Uint8Array(length + 22);
@@ -167,17 +170,20 @@ class ZipTransformer {
 
     for (const fileName of Object.keys(this.files)) {
       file = this.files[fileName];
-      if (file) {
-        dv.setUint32(index, 0x50_4b_01_02);
-        dv.setUint16(index + 4, 0x14_00);
-        dv.setUint16(index + 32, file.comment.length, true);
-        dv.setUint8(index + 38, file.directory ? 16 : 0);
-        dv.setUint32(index + 42, JSBI.toNumber(file.offset), true);
-        data.set(file.header, index + 6);
-        data.set(file.nameBuf, index + 46);
-        data.set(file.comment, index + 46 + file.nameBuf.length);
-        index += 46 + file.nameBuf.length + file.comment.length;
+      if (!file) {
+        throw new TypeError(
+          `File not found while flushing ZipTransformer: ${fileName}`,
+        );
       }
+      dv.setUint32(index, 0x50_4b_01_02);
+      dv.setUint16(index + 4, 0x14_00);
+      dv.setUint16(index + 32, file.comment.length, true);
+      dv.setUint8(index + 38, file.directory ? 16 : 0);
+      dv.setUint32(index + 42, JSBI.toNumber(file.offset), true);
+      data.set(file.header, index + 6);
+      data.set(file.nameBuf, index + 46);
+      data.set(file.comment, index + 46 + file.nameBuf.length);
+      index += 46 + file.nameBuf.length + file.comment.length;
     }
 
     dv.setUint32(index, 0x50_4b_05_06);
