@@ -83,7 +83,7 @@ myReadable
 
 // optionally, you can pass in a [queueing strategy](https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream#writablestrategy)
 // to the constructure in order to specify the number of streams being consumed at a time
-// default queue size is one, meaning only a single stream will be processed at a time 
+// default queue size is one, meaning only a single stream will be processed at a time
 myReadable
   .pipeThrough(
     new Writer({
