@@ -35,7 +35,7 @@ const folder = { name: 'folder/', directory: true };
 it('Writing - All in one big test', async () => {
   const { readable, writable } = new Writer({
     highWaterMark: 3,
-    size: (_) => 1,
+    size: () => 1,
   });
 
   const reading = (async () => {
