@@ -24,6 +24,7 @@
     "test": "web-test-runner --files test/**/*.test.ts --node-resolve --playwright --coverage --browsers chromium firefox webkit",
     "lint": "pnpm run \"/^lint:.*/\"",
     "lint:prettier": "prettier --check . --log-level warn",
+    "lint:prettier-fix": "prettier --write . --log-level warn",
     "lint:eslint": "eslint .",
     "lint:types": "tsc --build",
     "lint:knip": "knip",
