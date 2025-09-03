@@ -1,5 +1,5 @@
 /* eslint-disable unicorn/no-await-expression-member */
-import { assert } from '@esm-bundle/chai';
+import { assert, expect } from '@esm-bundle/chai';
 import { Writer, Reader } from '../src/index.js';
 import type { Entry } from '../src/read.js';
 import type { ZipTransformerEntry } from '../src/write.js';
@@ -33,7 +33,7 @@ const fileLikeUtf8: ZipTransformerEntry = {
 const folder = { name: 'folder/', directory: true };
 
 it('Writing - All in one big test', async () => {
-  const { readable, writable } = new Writer();
+  const { readable, writable } = new Writer({ highWaterMark: 3, size: (_) => 1});
 
   const reading = (async () => {
     const chunks = [];
@@ -46,12 +46,15 @@ it('Writing - All in one big test', async () => {
     return new Blob(chunks as BlobPart[]);
   })();
 
+
   const writing = (async () => {
     const writer = writable.getWriter();
+    assert.equal(writer.desiredSize, 3, "Writer internal queue starts correct number of open chunks")
     await writer.write(helloWorld);
     await writer.write(fileLikeUtf8);
     await writer.write(folder);
     await writer.close();
+    assert.equal(writer.desiredSize, 0, "Writer ")
   })();
 
   const [blob] = await Promise.all([reading, writing]);
