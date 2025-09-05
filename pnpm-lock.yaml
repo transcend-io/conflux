@@ -11,9 +11,6 @@ importers:
       pako:
         specifier: ^2.1.0
         version: 2.1.0
-      playwright:
-        specifier: ^1.55.0
-        version: 1.55.0
     devDependencies:
       '@eslint/js':
         specifier: ^9.32.0
@@ -54,6 +51,9 @@ importers:
       knip:
         specifier: ^5.62.0
         version: 5.62.0(@types/node@22.17.1)(typescript@5.9.2)
+      playwright:
+        specifier: ^1.55.0
+        version: 1.55.0
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
