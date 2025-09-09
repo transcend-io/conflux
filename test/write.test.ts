@@ -35,7 +35,6 @@ const folder = { name: 'folder/', directory: true };
 it('Writing - All in one big test', async () => {
   const { readable, writable } = new Writer({
     highWaterMark: 3,
-    size: () => 1,
   });
 
   const reading = (async () => {
@@ -51,6 +50,7 @@ it('Writing - All in one big test', async () => {
 
   const writing = (async () => {
     const writer = writable.getWriter();
+    await writer.ready;
     assert.equal(
       writer.desiredSize,
       3,
