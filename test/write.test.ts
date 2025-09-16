@@ -56,13 +56,15 @@ it('Writing - All in one big test', async () => {
       3,
       'Writer internal queue starts correct number of open chunks',
     );
-    await writer.write(helloWorld);
-    await writer.write(fileLikeUtf8);
-    await writer.write(folder);
+    writer.write(helloWorld);
+    writer.write(fileLikeUtf8);
+    writer.write(folder);
+    assert.equal(writer.desiredSize, 0, 'Writer full');
     await writer.ready;
-    assert.equal(writer.desiredSize, 0, 'Writer ready after a');
+    assert.equal(writer.desiredSize, 1, 'Writer has opening');
     await writer.close();
-    assert.equal(writer.desiredSize, 0, 'Writer ');
+    await writer.ready;
+    assert.equal(writer.desiredSize, 0, 'Writer no longer has queue');
   })();
 
   const [blob] = await Promise.all([reading, writing]);
