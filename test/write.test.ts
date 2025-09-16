@@ -62,7 +62,7 @@ it('Writing - All in one big test', async () => {
     assert.equal(writer.desiredSize, 0, 'Writer full');
     await writer.ready;
     assert.equal(writer.desiredSize, 1, 'Writer has opening');
-    await Promise.all([helloProm, fileProm, folderProm])
+    await Promise.all([helloProm, fileProm, folderProm]);
     assert.equal(writer.desiredSize, 3, 'Writer queue empty');
     await writer.close();
     assert.equal(writer.desiredSize, 0, 'Writer no longer has queue');
