@@ -201,7 +201,10 @@ class ZipTransformer {
 }
 
 export class Writer extends TransformStream<ZipTransformerEntry, Uint8Array> {
-  constructor() {
-    super(new ZipTransformer());
+  /**
+   * @param queueingStrategy - determines the number of entries being written before backpressure applied
+   */
+  constructor(queueingStrategy?: QueuingStrategy<ZipTransformerEntry>) {
+    super(new ZipTransformer(), queueingStrategy);
   }
 }

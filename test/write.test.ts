@@ -33,7 +33,9 @@ const fileLikeUtf8: ZipTransformerEntry = {
 const folder = { name: 'folder/', directory: true };
 
 it('Writing - All in one big test', async () => {
-  const { readable, writable } = new Writer();
+  const { readable, writable } = new Writer({
+    highWaterMark: 3,
+  });
 
   const reading = (async () => {
     const chunks = [];
@@ -48,10 +50,22 @@ it('Writing - All in one big test', async () => {
 
   const writing = (async () => {
     const writer = writable.getWriter();
-    await writer.write(helloWorld);
-    await writer.write(fileLikeUtf8);
-    await writer.write(folder);
+    await writer.ready;
+    assert.equal(
+      writer.desiredSize,
+      3,
+      'Writer internal queue starts correct number of open chunks',
+    );
+    const helloProm = writer.write(helloWorld);
+    const fileProm = writer.write(fileLikeUtf8);
+    const folderProm = writer.write(folder);
+    assert.equal(writer.desiredSize, 0, 'Writer full');
+    await writer.ready;
+    assert.equal(writer.desiredSize, 1, 'Writer has opening');
+    await Promise.all([helloProm, fileProm, folderProm]);
+    assert.equal(writer.desiredSize, 3, 'Writer queue empty');
     await writer.close();
+    assert.equal(writer.desiredSize, 0, 'Writer no longer has queue');
   })();
 
   const [blob] = await Promise.all([reading, writing]);
