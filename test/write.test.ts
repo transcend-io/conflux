@@ -56,14 +56,15 @@ it('Writing - All in one big test', async () => {
       3,
       'Writer internal queue starts correct number of open chunks',
     );
-    writer.write(helloWorld);
-    writer.write(fileLikeUtf8);
-    writer.write(folder);
+    const helloProm = writer.write(helloWorld);
+    const fileProm = writer.write(fileLikeUtf8);
+    const folderProm = writer.write(folder);
     assert.equal(writer.desiredSize, 0, 'Writer full');
     await writer.ready;
     assert.equal(writer.desiredSize, 1, 'Writer has opening');
+    await Promise.all([helloProm, fileProm, folderProm])
+    assert.equal(writer.desiredSize, 3, 'Writer queue empty');
     await writer.close();
-    await writer.ready;
     assert.equal(writer.desiredSize, 0, 'Writer no longer has queue');
   })();
 
