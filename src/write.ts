@@ -10,15 +10,13 @@ import { Crc32 } from './crc.js';
 
 const encoder = new TextEncoder();
 
-interface ZipTransformerEntry {
+export interface ZipTransformerEntry {
   directory?: boolean;
   name: string;
   comment?: string;
   lastModified?: number;
   stream?: () => ReadableStream<Uint8Array>;
 }
-
-export type { ZipTransformerEntry };
 
 interface ZipObject {
   directory: boolean;
