@@ -1,2 +1,2 @@
-export { Reader } from './read.js';
-export { Writer } from './write.js';
+export { Reader, type Entry } from './read.js';
+export { Writer, type ZipTransformerEntry } from './write.js';
