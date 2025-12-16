@@ -1,6 +1,6 @@
 {
   "name": "@transcend-io/conflux",
-  "version": "6.1.1",
+  "version": "6.1.2",
   "type": "module",
   "description": "Build zip files out of readable streams in the browser",
   "main": "./dist/commonjs/index.js",
