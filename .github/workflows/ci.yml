@@ -61,6 +61,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
+      id-token: write
       contents: read
       packages: write
     needs:
@@ -81,13 +82,10 @@ jobs:
       - name: Ensure no changed files
         run: git diff --exit-code
 
-      - name: Configure npm authentication
-        run: |
-          pnpm config set always-auth true
-          pnpm config set //registry.npmjs.org/:_authToken "${{ secrets.NPM_TOKEN }}"
-
       - name: Publish to npm
         run: pnpm publish
+        env:
+          NODE_AUTH_TOKEN: ""
 
       - name: Configure GitHub Packages authentication
         run: |
