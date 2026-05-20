@@ -39,6 +39,7 @@
     "pako": "^2.1.0"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.2",
     "@eslint/js": "^9.32.0",
     "@esm-bundle/chai": "4.3.4-fix.0",
     "@tsconfig/strictest": "^2.0.5",
@@ -60,6 +61,11 @@
     "typescript-eslint": "^8.38.0"
   },
   "packageManager": "pnpm@10.13.1+sha256.0f9ed48d808996ae007835fb5c4641cf9a300def2eddc9e957d9bbe4768c5f28",
+  "pnpm": {
+    "overrides": {
+      "@arethetypeswrong/core>fflate": "0.8.2"
+    }
+  },
   "tshy": {
     "project": "tsconfig.web.json",
     "selfLink": false,
