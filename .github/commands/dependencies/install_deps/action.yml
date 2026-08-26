@@ -4,13 +4,13 @@ runs:
   using: 'composite'
   steps:
     # Install pnpm dependencies (see https://github.com/pnpm/action-setup?tab=readme-ov-file#use-cache-to-reduce-installation-time)
-    - uses: pnpm/action-setup@v4
+    - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       name: Install pnpm
       with:
         run_install: false
 
     - name: Install Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
       with:
         cache: 'pnpm'
         node-version-file: '.nvmrc'
@@ -27,7 +27,7 @@ runs:
       run: |
         echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
-    - uses: actions/cache@v4
+    - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
       name: Setup pnpm cache
       with:
         path: ${{ env.STORE_PATH }}
