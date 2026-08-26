@@ -3,7 +3,7 @@
 exclude: (pnpm-lock.yaml|node_modules/|dist/|build/)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.5.0
+    rev: v6.0.0
     hooks:
       - id: check-merge-conflict
       - id: check-symlinks
@@ -23,8 +23,9 @@ repos:
       - id: lint
         name: Lint
         description: 'Code linting'
-        entry: pnpm run lint
-        language: node
+        entry: pnpm
+        language: system
+        args: [run, lint]
         types_or: [javascript, jsx, ts, tsx, markdown, json]
         # Just run global `pnpm run lint` without passing filenames
         pass_filenames: false
@@ -34,8 +35,11 @@ repos:
       - id: format
         name: Format
         description: 'Code formatting'
-        entry: pnpm run format
-        language: node
+        entry: pnpm
+        language: system
+        args: [run, format]
         types_or: [javascript, jsx, ts, tsx, markdown, json]
         # Just run global `pnpm run format` without passing filenames
         pass_filenames: false
+
+minimum_pre_commit_version: '4.6.2'
