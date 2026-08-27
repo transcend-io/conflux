@@ -44,7 +44,7 @@
     "@esm-bundle/chai": "4.3.4-fix.0",
     "@tsconfig/strictest": "2.0.8",
     "@types/mocha": "10.0.10",
-    "@types/node": "22.19.19",
+    "@types/node": "24.13.3",
     "@types/pako": "2.0.4",
     "@web/dev-server-esbuild": "1.0.5",
     "@web/test-runner": "0.20.2",
