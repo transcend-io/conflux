@@ -619,3 +619,138 @@ it('Reading - classic archive with exactly 0xFFFF entries and no Zip64 records',
   assert.equal(last?.name, String(count - 1));
   assert.equal(last?.zip64, false);
 });
+
+/**
+ * Build a one-entry stored archive with optional Zip64 records and comments.
+ * This keeps Zip64 parser edge-case fixtures small and explicit.
+ */
+function singleEntryArchive({
+  compressedSize = 0,
+  uncompressedSize = 0,
+  extra = new Uint8Array(0),
+  entryComment = new Uint8Array(0),
+  archiveComment = new Uint8Array(0),
+  zip64 = false,
+}: {
+  compressedSize?: number;
+  uncompressedSize?: number;
+  extra?: Uint8Array;
+  entryComment?: Uint8Array;
+  archiveComment?: Uint8Array;
+  zip64?: boolean;
+}): Blob {
+  const name = new TextEncoder().encode('x');
+  const localLength = 30 + name.length;
+  const centralLength = 46 + name.length + extra.length + entryComment.length;
+  const trailerLength = (zip64 ? 56 + 20 : 0) + 22;
+  const bytes = new Uint8Array(
+    localLength + centralLength + trailerLength + archiveComment.length,
+  );
+  const dv = new DataView(bytes.buffer);
+
+  // Local file header for an empty stored entry.
+  dv.setUint32(0, 0x50_4b_03_04);
+  dv.setUint16(4, zip64 ? 45 : 20, true);
+  dv.setUint16(26, name.length, true);
+  bytes.set(name, 30);
+
+  // Central directory record.
+  const central = localLength;
+  dv.setUint32(central, 0x50_4b_01_02);
+  dv.setUint16(central + 4, zip64 ? 45 : 20, true);
+  dv.setUint16(central + 6, zip64 ? 45 : 20, true);
+  dv.setUint32(central + 20, compressedSize, true);
+  dv.setUint32(central + 24, uncompressedSize, true);
+  dv.setUint16(central + 28, name.length, true);
+  dv.setUint16(central + 30, extra.length, true);
+  dv.setUint16(central + 32, entryComment.length, true);
+  bytes.set(name, central + 46);
+  bytes.set(extra, central + 46 + name.length);
+  bytes.set(entryComment, central + 46 + name.length + extra.length);
+
+  let eocd = central + centralLength;
+  if (zip64) {
+    // Zip64 end of central directory record.
+    dv.setUint32(eocd, 0x50_4b_06_06);
+    dv.setBigUint64(eocd + 4, BigInt(44), true);
+    dv.setUint16(eocd + 12, 45, true);
+    dv.setUint16(eocd + 14, 45, true);
+    dv.setBigUint64(eocd + 24, BigInt(1), true);
+    dv.setBigUint64(eocd + 32, BigInt(1), true);
+    dv.setBigUint64(eocd + 40, BigInt(centralLength), true);
+    dv.setBigUint64(eocd + 48, BigInt(central), true);
+
+    // Zip64 end of central directory locator.
+    const locator = eocd + 56;
+    dv.setUint32(locator, 0x50_4b_06_07);
+    dv.setBigUint64(locator + 8, BigInt(eocd), true);
+    dv.setUint32(locator + 16, 1, true);
+    eocd = locator + 20;
+  }
+
+  // Classic end of central directory record. Force sentinels for the Zip64
+  // fixture so the Reader must follow the locator.
+  dv.setUint32(eocd, 0x50_4b_05_06);
+  dv.setUint16(eocd + 8, zip64 ? 0xff_ff : 1, true);
+  dv.setUint16(eocd + 10, zip64 ? 0xff_ff : 1, true);
+  dv.setUint32(eocd + 12, zip64 ? 0xff_ff_ff_ff : centralLength, true);
+  dv.setUint32(eocd + 16, zip64 ? 0xff_ff_ff_ff : central, true);
+  dv.setUint16(eocd + 20, archiveComment.length, true);
+  bytes.set(archiveComment, eocd + 22);
+
+  return new Blob([bytes]);
+}
+
+it('Reading - Zip64 archive with an archive comment', async () => {
+  const archiveComment = new TextEncoder().encode('archive comment');
+  const it = Reader(singleEntryArchive({ archiveComment, zip64: true }));
+
+  const entry = (await it.next()).value as Entry;
+  assert.equal(entry.name, 'x');
+  assert.equal(entry.offset, 0);
+  assert.equal(entry.size, 0);
+  assert.ok((await it.next()).done);
+});
+
+it('Reading - Zip64 values are unsigned', async () => {
+  const value = BigInt('0x8000000000000001');
+  const extra = new Uint8Array(20);
+  const dv = new DataView(extra.buffer);
+  dv.setUint16(0, 0x00_01, true);
+  dv.setUint16(2, 16, true);
+  dv.setBigUint64(4, value, true);
+  dv.setBigUint64(12, value, true);
+
+  const it = Reader(
+    singleEntryArchive({
+      compressedSize: 0xff_ff_ff_ff,
+      uncompressedSize: 0xff_ff_ff_ff,
+      extra,
+    }),
+  );
+  const entry = (await it.next()).value as Entry;
+  assert.equal(entry.size, value);
+  assert.equal(entry.compressedSize, Number(value));
+});
+
+it('Reading - rejects an extra field whose payload exceeds the extra area', async () => {
+  const extra = new Uint8Array(4);
+  const extraView = new DataView(extra.buffer);
+  extraView.setUint16(0, 0x00_01, true);
+  extraView.setUint16(2, 8, true);
+
+  const entryComment = new Uint8Array(8);
+  new DataView(entryComment.buffer).setBigUint64(0, BigInt(123), true);
+  const result = await Reader(
+    singleEntryArchive({
+      uncompressedSize: 0xff_ff_ff_ff,
+      extra,
+      entryComment,
+    }),
+  )
+    .next()
+    .catch((error: unknown) => error as Error);
+
+  assert.ok(result instanceof Error);
+  assert.equal(result.message, 'Invalid ZIP file.');
+});

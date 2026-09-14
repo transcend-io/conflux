@@ -68,20 +68,26 @@ class Entry {
     for (let index = 46 + this.filenameLength; index + 4 <= extraFieldsEnd; ) {
       const id = dv.getUint16(index, true);
       const length = dv.getUint16(index + 2, true);
+      const fieldEnd = index + 4 + length;
+      if (fieldEnd > extraFieldsEnd) {
+        throw new Error('Invalid ZIP file.');
+      }
       const start = dv.byteOffset + index + 4;
       this._extraFields[id] = new DataView(
         dv.buffer.slice(start, start + length),
       );
-      index += length + 4;
+      index = fieldEnd;
     }
 
     const zip64Field = this._extraFields[0x00_01];
     if (zip64Field) {
       this._zip64 = {};
       let position = 0;
-      const readNext = (): bigint | undefined => {
-        if (position + 8 > zip64Field.byteLength) return undefined;
-        const value = getBigInt64(zip64Field, position, true);
+      const readNext = (): bigint => {
+        if (position + 8 > zip64Field.byteLength) {
+          throw new Error('Invalid ZIP file.');
+        }
+        const value = getBigUint64(zip64Field, position, true);
         position += 8;
         return value;
       };
@@ -313,41 +319,26 @@ class Entry {
 export type { Entry };
 
 /**
- * Get a BigInt 64 from a DataView
+ * Get an unsigned BigInt 64 from a DataView
  *
  * @param view a dataview
  * @param position the position
  * @param littleEndian whether this uses littleEndian encoding
  * @returns BigInt
  */
-function getBigInt64(
+function getBigUint64(
   view: DataView,
   position: number,
   littleEndian = false,
 ): bigint {
-  if ('getBigInt64' in DataView.prototype) {
-    return view.getBigInt64(position, littleEndian);
+  if ('getBigUint64' in DataView.prototype) {
+    return view.getBigUint64(position, littleEndian);
   }
 
   let value = JSBI.BigInt(0);
-  const isNegative =
-    (view.getUint8(position + (littleEndian ? 7 : 0)) & 0x80) > 0;
-  let carrying = true;
 
   for (let index = 0; index < 8; index++) {
-    let byte = view.getUint8(position + (littleEndian ? index : 7 - index));
-
-    if (isNegative) {
-      if (carrying) {
-        if (byte !== 0x00) {
-          byte = ~(byte - 1) & 0xff;
-          carrying = false;
-        }
-      } else {
-        byte = ~byte & 0xff;
-      }
-    }
-
+    const byte = view.getUint8(position + (littleEndian ? index : 7 - index));
     value = JSBI.add(
       value,
       JSBI.multiply(
@@ -355,10 +346,6 @@ function getBigInt64(
         JSBI.exponentiate(JSBI.BigInt(256), JSBI.BigInt(index)),
       ),
     );
-  }
-
-  if (isNegative) {
-    value = JSBI.unaryMinus(value);
   }
 
   return value;
@@ -373,8 +360,11 @@ export async function* Reader(
   if (file.size < EOCDR_MIN) throw new Error(ERR_BAD_FORMAT);
 
   // seek last length bytes of file for EOCDR
-  async function doSeek(length: number): Promise<DataView | null> {
-    const ab = await file.slice(file.size - length, file.size).arrayBuffer();
+  async function doSeek(
+    length: number,
+  ): Promise<{ dataView: DataView; offset: number } | null> {
+    const start = file.size - length;
+    const ab = await file.slice(start, file.size).arrayBuffer();
     const bytes = new Uint8Array(ab);
     for (let index = bytes.length - EOCDR_MIN; index >= 0; index--) {
       if (
@@ -383,7 +373,10 @@ export async function* Reader(
         bytes[index + 2] === 0x05 &&
         bytes[index + 3] === 0x06
       ) {
-        return new DataView(bytes.buffer, index, EOCDR_MIN);
+        return {
+          dataView: new DataView(bytes.buffer, index, EOCDR_MIN),
+          offset: start + index,
+        };
       }
     }
 
@@ -391,11 +384,12 @@ export async function* Reader(
   }
 
   // In most cases, the EOCDR is EOCDR_MIN bytes long
-  const dv =
+  const eocd =
     (await doSeek(EOCDR_MIN)) ?? (await doSeek(Math.min(EOCDR_MAX, file.size)));
 
-  if (!dv) throw new Error(ERR_BAD_FORMAT);
+  if (!eocd) throw new Error(ERR_BAD_FORMAT);
 
+  const { dataView: dv, offset: eocdOffset } = eocd;
   let filesCount = dv.getUint16(8, true);
   let centralDirectorySize = dv.getUint32(12, true);
   let centralDirectoryOffset = dv.getUint32(16, true);
@@ -411,10 +405,10 @@ export async function* Reader(
     centralDirectorySize === MAX_VALUE_32BITS ||
     filesCount === MAX_VALUE_16BITS;
 
-  if (maybeZip64 && file.size >= dv.byteLength + ZIP64_LOCATOR_LENGTH) {
-    const l = -dv.byteLength - ZIP64_LOCATOR_LENGTH;
+  if (maybeZip64 && eocdOffset >= ZIP64_LOCATOR_LENGTH) {
+    const locatorOffset = eocdOffset - ZIP64_LOCATOR_LENGTH;
     const locator = new DataView(
-      await file.slice(l, -dv.byteLength).arrayBuffer(),
+      await file.slice(locatorOffset, eocdOffset).arrayBuffer(),
     );
 
     if (
@@ -422,19 +416,19 @@ export async function* Reader(
       locator.getUint32(0) === ZIP64_LOCATOR_SIGNATURE
     ) {
       // const diskWithZip64CentralDirStart = locator.getUint32(4, true) // 4 bytes
-      const relativeOffsetEndOfZip64CentralDirectory = JSBI.toNumber(
-        getBigInt64(locator, 8, true),
-      ); // 8 bytes
+      const zip64EocdOffsetBig = getBigUint64(locator, 8, true); // 8 bytes
       // const numberOfDisks = locator.getUint32(16, true) // 4 bytes
 
       if (
-        relativeOffsetEndOfZip64CentralDirectory >= 0 &&
-        relativeOffsetEndOfZip64CentralDirectory + ZIP64_EOCDR_MIN <=
-          file.size + l
+        JSBI.lessThanOrEqual(
+          zip64EocdOffsetBig,
+          JSBI.BigInt(locatorOffset - ZIP64_EOCDR_MIN),
+        )
       ) {
+        const zip64EocdOffset = JSBI.toNumber(zip64EocdOffsetBig);
         const zip64centralBlob = file.slice(
-          relativeOffsetEndOfZip64CentralDirectory,
-          l,
+          zip64EocdOffset,
+          zip64EocdOffset + ZIP64_EOCDR_MIN,
         );
         const zip64 = new DataView(await zip64centralBlob.arrayBuffer());
 
@@ -443,9 +437,9 @@ export async function* Reader(
           // const diskNumber = zip64.getUint32(16, true)
           // const diskWithCentralDirStart = zip64.getUint32(20, true)
           // const centralDirRecordsOnThisDisk = zip64.getBigInt64(24, true)
-          filesCount = JSBI.toNumber(getBigInt64(zip64, 32, true));
-          centralDirectorySize = JSBI.toNumber(getBigInt64(zip64, 40, true));
-          centralDirectoryOffset = JSBI.toNumber(getBigInt64(zip64, 48, true));
+          filesCount = JSBI.toNumber(getBigUint64(zip64, 32, true));
+          centralDirectorySize = JSBI.toNumber(getBigUint64(zip64, 40, true));
+          centralDirectoryOffset = JSBI.toNumber(getBigUint64(zip64, 48, true));
         }
       }
     }
