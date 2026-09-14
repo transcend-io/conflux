@@ -371,6 +371,46 @@ describe('Writing - Zip64 archives', () => {
     assert.ok((await it.next()).done);
   });
 
+  it('archive with exactly 0xFFFF entries round-trips through a Zip64 end of central directory', async () => {
+    const count = 0xff_ff;
+    const transformer = new ZipTransformer();
+    const { ctrl, chunks } = collectingController();
+    const lastModified = +new Date('2020-01-27T16:55:59');
+    for (let index = 0; index < count; index++) {
+      await transformer.transform(
+        { name: `d${String(index)}`, directory: true, lastModified },
+        ctrl,
+      );
+    }
+    transformer.flush(ctrl);
+
+    const trailer = chunks.at(-1);
+    if (!trailer) throw new Error('trailer not found');
+    assert.equal(trailer.length, 56 + 20 + 22, 'zip64 EOCD + locator + EOCD');
+    const tdv = dataView(trailer);
+    assert.deepEqual(
+      signatureAt(trailer, 0),
+      SIG_ZIP64_END_OF_CENTRAL_DIRECTORY,
+    );
+    assert.equal(tdv.getBigUint64(32, true), BigInt(count), 'total entries');
+    assert.equal(
+      tdv.getUint16(76 + 8, true),
+      0xff_ff,
+      'classic count sentinel',
+    );
+
+    let read = 0;
+    let last: Entry | undefined;
+    const archive = new Blob(chunks as unknown as BlobPart[]);
+    for await (const entry of Reader(archive)) {
+      last = entry;
+      read++;
+    }
+    assert.equal(read, count, 'entry count comes from the zip64 EOCD');
+    assert.equal(last?.name, `d${String(count - 1)}/`);
+    assert.equal(last?.directory, true);
+  });
+
   (runBigFixtures ? it : it.skip)(
     'entry of exactly 0xFFFFFFFF bytes uses zip64 sizes and pushes the next entry past 4 GiB',
     async () => {

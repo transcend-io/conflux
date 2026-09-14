@@ -13,6 +13,11 @@ const ERR_BAD_FORMAT = 'File format is not recognized.';
 const ZIP_COMMENT_MAX = 65_536;
 const EOCDR_MIN = 22;
 const EOCDR_MAX = EOCDR_MIN + ZIP_COMMENT_MAX;
+const ZIP64_LOCATOR_LENGTH = 20;
+const ZIP64_LOCATOR_SIGNATURE = 0x50_4b_06_07;
+/** Fixed part of the Zip64 end of central directory record (APPNOTE 4.3.14). */
+const ZIP64_EOCDR_MIN = 56;
+const ZIP64_EOCDR_SIGNATURE = 0x50_4b_06_06;
 const MAX_VALUE_16BITS = 0xff_ff;
 const MAX_VALUE_32BITS = 0xff_ff_ff_ff;
 
@@ -386,7 +391,7 @@ export async function* Reader(
   }
 
   // In most cases, the EOCDR is EOCDR_MIN bytes long
-  let dv =
+  const dv =
     (await doSeek(EOCDR_MIN)) ?? (await doSeek(Math.min(EOCDR_MAX, file.size)));
 
   if (!dv) throw new Error(ERR_BAD_FORMAT);
@@ -396,34 +401,54 @@ export async function* Reader(
   let centralDirectoryOffset = dv.getUint32(16, true);
   // const fileCommentLength = dv.getUint16(20, true);
 
-  const isZip64 =
+  // A sentinel in any of these fields means the real value may live in a
+  // Zip64 end of central directory record. Some writers (e.g. Python's
+  // zipfile) emit a classic archive with exactly 0xFFFF entries and no Zip64
+  // records, so the Zip64 structures are only trusted when their signatures
+  // are actually present; otherwise the classic values are kept.
+  const maybeZip64 =
     centralDirectoryOffset === MAX_VALUE_32BITS ||
     centralDirectorySize === MAX_VALUE_32BITS ||
     filesCount === MAX_VALUE_16BITS;
 
-  if (isZip64) {
-    const l = -dv.byteLength - 20;
-    dv = new DataView(await file.slice(l, -dv.byteLength).arrayBuffer());
-
-    // const signature = dv.getUint32(0, true) // 4 bytes
-    // const diskWithZip64CentralDirStart = dv.getUint32(4, true) // 4 bytes
-    const relativeOffsetEndOfZip64CentralDirectory = JSBI.toNumber(
-      getBigInt64(dv, 8, true),
-    ); // 8 bytes
-    // const numberOfDisks = dv.getUint32(16, true) // 4 bytes
-
-    const zip64centralBlob = file.slice(
-      relativeOffsetEndOfZip64CentralDirectory,
-      l,
+  if (maybeZip64 && file.size >= dv.byteLength + ZIP64_LOCATOR_LENGTH) {
+    const l = -dv.byteLength - ZIP64_LOCATOR_LENGTH;
+    const locator = new DataView(
+      await file.slice(l, -dv.byteLength).arrayBuffer(),
     );
-    dv = new DataView(await zip64centralBlob.arrayBuffer());
-    // const zip64EndOfCentralSize = dv.getBigInt64(4, true)
-    // const diskNumber = dv.getUint32(16, true)
-    // const diskWithCentralDirStart = dv.getUint32(20, true)
-    // const centralDirRecordsOnThisDisk = dv.getBigInt64(24, true)
-    filesCount = JSBI.toNumber(getBigInt64(dv, 32, true));
-    centralDirectorySize = JSBI.toNumber(getBigInt64(dv, 40, true));
-    centralDirectoryOffset = JSBI.toNumber(getBigInt64(dv, 48, true));
+
+    if (
+      locator.byteLength === ZIP64_LOCATOR_LENGTH &&
+      locator.getUint32(0) === ZIP64_LOCATOR_SIGNATURE
+    ) {
+      // const diskWithZip64CentralDirStart = locator.getUint32(4, true) // 4 bytes
+      const relativeOffsetEndOfZip64CentralDirectory = JSBI.toNumber(
+        getBigInt64(locator, 8, true),
+      ); // 8 bytes
+      // const numberOfDisks = locator.getUint32(16, true) // 4 bytes
+
+      if (
+        relativeOffsetEndOfZip64CentralDirectory >= 0 &&
+        relativeOffsetEndOfZip64CentralDirectory + ZIP64_EOCDR_MIN <=
+          file.size + l
+      ) {
+        const zip64centralBlob = file.slice(
+          relativeOffsetEndOfZip64CentralDirectory,
+          l,
+        );
+        const zip64 = new DataView(await zip64centralBlob.arrayBuffer());
+
+        if (zip64.getUint32(0) === ZIP64_EOCDR_SIGNATURE) {
+          // const zip64EndOfCentralSize = zip64.getBigInt64(4, true)
+          // const diskNumber = zip64.getUint32(16, true)
+          // const diskWithCentralDirStart = zip64.getUint32(20, true)
+          // const centralDirRecordsOnThisDisk = zip64.getBigInt64(24, true)
+          filesCount = JSBI.toNumber(getBigInt64(zip64, 32, true));
+          centralDirectorySize = JSBI.toNumber(getBigInt64(zip64, 40, true));
+          centralDirectoryOffset = JSBI.toNumber(getBigInt64(zip64, 48, true));
+        }
+      }
+    }
   }
 
   if (centralDirectoryOffset < 0 || centralDirectoryOffset >= file.size) {

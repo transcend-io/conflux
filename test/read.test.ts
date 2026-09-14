@@ -553,3 +553,69 @@ it('Reading - zip64.zip', async () => {
 
   assert.ok((await it.next()).done);
 });
+
+/**
+ * Build a classic (non-Zip64) stored archive of `count` empty entries by hand.
+ * With 0xFFFF entries the end of central directory count field equals the
+ * Zip64 sentinel even though no Zip64 records exist, which is what e.g.
+ * Python's zipfile produces for exactly 65,535 entries.
+ */
+function classicArchive(count: number): Blob {
+  const encoder = new TextEncoder();
+  const names = Array.from({ length: count }, (_, index) =>
+    encoder.encode(String(index)),
+  );
+  const localLength = names.reduce(
+    (total, name) => total + 30 + name.length,
+    0,
+  );
+  const centralLength = names.reduce(
+    (total, name) => total + 46 + name.length,
+    0,
+  );
+  const bytes = new Uint8Array(localLength + centralLength + 22);
+  const dv = new DataView(bytes.buffer);
+
+  let local = 0;
+  let central = localLength;
+  for (const name of names) {
+    dv.setUint32(local, 0x50_4b_03_04);
+    dv.setUint16(local + 4, 20, true);
+    dv.setUint16(local + 26, name.length, true);
+    bytes.set(name, local + 30);
+
+    dv.setUint32(central, 0x50_4b_01_02);
+    dv.setUint16(central + 4, 20, true);
+    dv.setUint16(central + 6, 20, true);
+    dv.setUint16(central + 28, name.length, true);
+    dv.setUint32(central + 42, local, true);
+    bytes.set(name, central + 46);
+
+    local += 30 + name.length;
+    central += 46 + name.length;
+  }
+
+  dv.setUint32(central, 0x50_4b_05_06);
+  dv.setUint16(central + 8, Math.min(count, 0xff_ff), true);
+  dv.setUint16(central + 10, Math.min(count, 0xff_ff), true);
+  dv.setUint32(central + 12, centralLength, true);
+  dv.setUint32(central + 16, localLength, true);
+  return new Blob([bytes]);
+}
+
+it('Reading - classic archive with exactly 0xFFFF entries and no Zip64 records', async () => {
+  const count = 0xff_ff;
+  let read = 0;
+  let last: Entry | undefined;
+  for await (const entry of Reader(classicArchive(count))) {
+    if (read === 0) {
+      assert.equal(entry.name, '0');
+      assert.equal(entry.offset, 0);
+    }
+    last = entry;
+    read++;
+  }
+  assert.equal(read, count, 'all entries are read from the classic fields');
+  assert.equal(last?.name, String(count - 1));
+  assert.equal(last?.zip64, false);
+});
