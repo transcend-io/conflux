@@ -161,12 +161,24 @@ const fileStream = streamSaver.createWriteStream('conflux.zip');
 
 #### Large archives (Zip64)
 
-Archives over 4 GB, entries over 4 GB, and archives with 65,535 or more entries are written with [Zip64](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT) extensions as needed: 64-bit data descriptors, Zip64 extra fields in the central directory, and a Zip64 end of central directory record. Smaller archives keep the classic layout.
+Archives over 4 GB, entries over 4 GB, and archives with 65,535 or more entries are written with [Zip64](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT) extensions: Zip64 extra fields in the central directory for any size or offset that overflows 32 bits, and a Zip64 end of central directory record plus locator when needed. Smaller archives keep a classic central directory and end of central directory record.
 
-Because the writer streams, it does not know an entry's size until the data has been written, so every entry declares `version needed to extract` 4.5 (Zip64) up front. Readers that use the central directory (Windows Explorer, macOS Archive Utility, Info-ZIP `unzip`, 7-Zip, Python `zipfile`, Java `ZipFile`, this library's `Reader`) handle this. Two kinds of consumer do not:
+Because the writer streams, it does not know an entry's size until the data has been written. It therefore uses the same layout Info-ZIP `zip` and Python `zipfile` produce for unseekable output: every local header declares `version needed to extract` 4.5, carries a Zip64 extra field with zero placeholder sizes, and is followed by a 64-bit (24-byte) data descriptor holding the real CRC and sizes. This lets both central-directory readers (Windows Explorer, macOS Archive Utility, Info-ZIP `unzip`, 7-Zip, Python `zipfile`, Java `ZipFile`, this library's `Reader`) and forward-only streaming readers (libarchive `bsdtar` on a pipe) parse the output, at a cost of 28 bytes per entry.
 
-- **Office document containers** (OOXML / ODF): Microsoft Office and LibreOffice require `version needed to extract` 2.0 for package parts and will reject a `.docx`/`.xlsx`/`.ods` assembled with this writer. Use a non-streaming ZIP library for those.
-- **Forward-only streaming readers** that never consult the central directory (for example `bsdtar -xf -` on a pipe): entries over 4 GB use a 24-byte data descriptor, and the local header does not signal that width, so such readers misread the entry size.
+One consumer class is not supported: **Office document containers** (OOXML / ODF). Microsoft Office and LibreOffice require `version needed to extract` 2.0 for package parts and reject a `.docx`/`.xlsx`/`.ods` assembled with this writer. Use a non-streaming ZIP library for those.
+
+##### Verifying large archives
+
+Browser tests cannot hand a multi-gigabyte file to external tools, so the Zip64 path is checked in three layers:
+
+1. **Unit tests** (`pnpm test`) cover the record builders at the boundaries (`0xFFFFFFFF`, 4 GiB + 1, 65,535 entries) and round-trip a small entry seeded past the 4 GiB offset through the `Reader`.
+2. **Opt-in streaming tests** (`FF_BIG_FIXTURES=run pnpm test`, Chromium, ~6 minutes) push real 4 GiB+ streams through the `Writer` while discarding payload bytes, then parse the sparse result with the `Reader`.
+3. **On-disk fixtures against external readers.** Run the built `Writer` under Node (`globalThis.self = globalThis` before importing `dist/esm/index.js`, since the library probes `self`), pipe `Readable.fromWeb(writer.readable)` into a file, and record a SHA-256 per entry while generating unique-per-chunk data. Useful shapes: five 1 GiB entries plus a small one (offsets overflow, sizes do not), one 4.4 GB entry plus a small one (sizes overflow and the trailing offset overflows), and a few-KB archive. Then run each fixture through:
+   - `unzip -t` and `zipinfo -v` (Info-ZIP): confirms CRCs and shows the Zip64 extra fields and offsets.
+   - `7z t` then `7z x` and compare every extracted file against the recorded SHA-256.
+   - `python3 -c 'import zipfile,sys; print(zipfile.ZipFile(sys.argv[1]).testzip())' fixture.zip`.
+   - `bsdtar -tvf fixture.zip` (seekable) and `cat fixture.zip | bsdtar -xOf - > /dev/null` (forward-only streaming, no central directory access).
+   - Finally open the >4 GB fixtures in Windows Explorer and macOS Archive Utility, the targets that cannot be scripted from Linux.
 
 ### Reading ZIP files
 
