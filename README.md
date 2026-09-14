@@ -161,7 +161,12 @@ const fileStream = streamSaver.createWriteStream('conflux.zip');
 
 #### Large archives (Zip64)
 
-Archives over 4 GB, entries over 4 GB, and archives with 65,535 or more entries are written with [Zip64](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT) extensions as needed: 64-bit data descriptors, Zip64 extra fields in the central directory, and a Zip64 end of central directory record. Smaller archives keep the classic layout. Every entry declares `version needed to extract` 4.5, which all current unzip tools support.
+Archives over 4 GB, entries over 4 GB, and archives with 65,535 or more entries are written with [Zip64](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT) extensions as needed: 64-bit data descriptors, Zip64 extra fields in the central directory, and a Zip64 end of central directory record. Smaller archives keep the classic layout.
+
+Because the writer streams, it does not know an entry's size until the data has been written, so every entry declares `version needed to extract` 4.5 (Zip64) up front. Readers that use the central directory (Windows Explorer, macOS Archive Utility, Info-ZIP `unzip`, 7-Zip, Python `zipfile`, Java `ZipFile`, this library's `Reader`) handle this. Two kinds of consumer do not:
+
+- **Office document containers** (OOXML / ODF): Microsoft Office and LibreOffice require `version needed to extract` 2.0 for package parts and will reject a `.docx`/`.xlsx`/`.ods` assembled with this writer. Use a non-streaming ZIP library for those.
+- **Forward-only streaming readers** that never consult the central directory (for example `bsdtar -xf -` on a pipe): entries over 4 GB use a 24-byte data descriptor, and the local header does not signal that width, so such readers misread the entry size.
 
 ### Reading ZIP files
 
