@@ -64,8 +64,8 @@ importers:
         specifier: 3.8.3
         version: 3.8.3
       tshy:
-        specifier: 3.3.2
-        version: 3.3.2
+        specifier: 4.1.3
+        version: 4.1.3
       tsx:
         specifier: 4.22.2
         version: 4.22.2
@@ -2782,8 +2782,8 @@ packages:
     peerDependencies:
       typescript: '>=4.8.4'
 
-  tshy@3.3.2:
-    resolution: {integrity: sha512-vOIXkqMtBWNjKUR/c99+6N50LhWdnKG1xE3+5wf8IPdzxx2lcIFPvbGgFdBBgoTMbdNb8mz06MUm7hY+TFnJcw==}
+  tshy@4.1.3:
+    resolution: {integrity: sha512-uEaLO1lFhu5X58KZxS5gKCabh+xd72MfXDOHhAIvnoreBAP1F4HNpbK2m0DUmrrzpcgxvXbsdXn1A0OaQxFYqw==}
     engines: {node: 20 || >=22}
     hasBin: true
 
@@ -2828,6 +2828,11 @@ packages:
 
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -5818,7 +5823,7 @@ snapshots:
     dependencies:
       typescript: 5.9.3
 
-  tshy@3.3.2:
+  tshy@4.1.3:
     dependencies:
       '@typescript/native-preview': 7.0.0-dev.20260518.1
       chalk: 5.6.2
@@ -5831,7 +5836,7 @@ snapshots:
       resolve-import: 2.4.0
       rimraf: 6.1.3
       sync-content: 2.0.4
-      typescript: 5.9.3
+      typescript: 6.0.3
       walk-up-path: 4.0.0
 
   tslib@2.8.1: {}
@@ -5871,6 +5876,8 @@ snapshots:
   typescript@5.6.1-rc: {}
 
   typescript@5.9.3: {}
+
+  typescript@6.0.3: {}
 
   typical@4.0.0: {}
 
