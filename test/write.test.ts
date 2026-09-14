@@ -75,8 +75,8 @@ it('Writing - All in one big test', async () => {
 
   // entry 1, Writer accepts native File object
   entry = (await it.next()).value as Entry;
-  assert.equal(entry.versionMadeBy, 20, 'versionMadeBy should be 20');
-  assert.equal(entry.versionNeeded, 20, 'versionNeeded should be 20');
+  assert.equal(entry.versionMadeBy, 45, 'versionMadeBy should be 45 (Zip64)');
+  assert.equal(entry.versionNeeded, 45, 'versionNeeded should be 45 (Zip64)');
   assert.equal(entry.bitFlag, 2056, 'bitflag should be 2056');
   assert.equal(entry.encrypted, false, 'entry is not encrypted');
   assert.equal(entry.compressionMethod, 0, 'entry has no compression');
@@ -130,4 +130,19 @@ it('Writing - All in one big test', async () => {
   entry = (await it.next()).value as Entry;
   assert.equal(entry.directory, true, 'Entry should be a directory');
   assert.equal(entry.name, 'folder/', 'Entry name should be folder/');
+  assert.equal(entry.zip64, false, 'directories are not zip64');
+
+  // Small archives must stay classic: no Zip64 end of central directory record
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  const eocd = bytes.length - 22;
+  assert.deepEqual(
+    [...bytes.subarray(eocd, eocd + 4)],
+    [0x50, 0x4b, 0x05, 0x06],
+    'archive ends with a classic end of central directory record',
+  );
+  assert.notDeepEqual(
+    [...bytes.subarray(eocd - 20, eocd - 16)],
+    [0x50, 0x4b, 0x06, 0x07],
+    'small archives have no Zip64 end of central directory locator',
+  );
 });
