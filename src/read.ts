@@ -13,6 +13,7 @@ const ERR_BAD_FORMAT = 'File format is not recognized.';
 const ZIP_COMMENT_MAX = 65_536;
 const EOCDR_MIN = 22;
 const EOCDR_MAX = EOCDR_MIN + ZIP_COMMENT_MAX;
+const MAX_VALUE_16BITS = 0xff_ff;
 const MAX_VALUE_32BITS = 0xff_ff_ff_ff;
 
 const decoder = new TextDecoder();
@@ -31,10 +32,22 @@ const uint16LittleEndian = (b: Uint8Array, n: number): number => {
  */
 type FileLike = File | Blob;
 
+/**
+ * Values from the Zip64 extended information extra field (APPNOTE 4.5.3).
+ * A value is only present when its 32-bit counterpart in the central
+ * directory record holds the 0xFFFFFFFF sentinel.
+ */
+interface Zip64ExtraField {
+  uncompressedSize?: bigint | undefined;
+  compressedSize?: bigint | undefined;
+  offset?: bigint | undefined;
+}
+
 class Entry {
   dataView: DataView;
   private _fileLike: FileLike;
   private _extraFields: Record<number, DataView> = {};
+  private _zip64: Zip64ExtraField | undefined;
 
   constructor(dataView: DataView, fileLike: FileLike) {
     if (dataView.getUint32(0) !== 0x50_4b_01_02) {
@@ -46,7 +59,8 @@ class Entry {
     this.dataView = dv;
     this._fileLike = fileLike;
 
-    for (let index = 46 + this.filenameLength; index < dv.byteLength; ) {
+    const extraFieldsEnd = 46 + this.filenameLength + this.extraFieldLength;
+    for (let index = 46 + this.filenameLength; index + 4 <= extraFieldsEnd; ) {
       const id = dv.getUint16(index, true);
       const length = dv.getUint16(index + 2, true);
       const start = dv.byteOffset + index + 4;
@@ -54,6 +68,28 @@ class Entry {
         dv.buffer.slice(start, start + length),
       );
       index += length + 4;
+    }
+
+    const zip64Field = this._extraFields[0x00_01];
+    if (zip64Field) {
+      this._zip64 = {};
+      let position = 0;
+      const readNext = (): bigint | undefined => {
+        if (position + 8 > zip64Field.byteLength) return undefined;
+        const value = getBigInt64(zip64Field, position, true);
+        position += 8;
+        return value;
+      };
+      // Fields appear in a fixed order, each only when the 32-bit field is the sentinel
+      if (dv.getUint32(24, true) === MAX_VALUE_32BITS) {
+        this._zip64.uncompressedSize = readNext();
+      }
+      if (dv.getUint32(20, true) === MAX_VALUE_32BITS) {
+        this._zip64.compressedSize = readNext();
+      }
+      if (dv.getUint32(42, true) === MAX_VALUE_32BITS) {
+        this._zip64.offset = readNext();
+      }
     }
   }
 
@@ -82,7 +118,14 @@ class Entry {
   }
 
   get compressedSize(): number {
-    return this.dataView.getUint32(20, true);
+    const size = this.dataView.getUint32(20, true);
+    if (
+      size === MAX_VALUE_32BITS &&
+      this._zip64?.compressedSize !== undefined
+    ) {
+      return JSBI.toNumber(this._zip64.compressedSize);
+    }
+    return size;
   }
 
   get filenameLength(): number {
@@ -114,11 +157,15 @@ class Entry {
   }
 
   get offset(): number {
-    return this.dataView.getUint32(42, true);
+    const offset = this.dataView.getUint32(42, true);
+    if (offset === MAX_VALUE_32BITS && this._zip64?.offset !== undefined) {
+      return JSBI.toNumber(this._zip64.offset);
+    }
+    return offset;
   }
 
   get zip64(): boolean {
-    return this.dataView.getUint32(24, true) === MAX_VALUE_32BITS;
+    return this._zip64 !== undefined;
   }
 
   get comment(): string {
@@ -168,11 +215,7 @@ class Entry {
   get size(): number | bigint {
     const size = this.dataView.getUint32(24, true);
     if (size === MAX_VALUE_32BITS) {
-      const field = this._extraFields[1];
-      if (!field) {
-        return 0;
-      }
-      return field.getBigUint64(0, true);
+      return this._zip64?.uncompressedSize ?? 0;
     }
     return size;
   }
@@ -353,7 +396,10 @@ export async function* Reader(
   let centralDirectoryOffset = dv.getUint32(16, true);
   // const fileCommentLength = dv.getUint16(20, true);
 
-  const isZip64 = centralDirectoryOffset === MAX_VALUE_32BITS;
+  const isZip64 =
+    centralDirectoryOffset === MAX_VALUE_32BITS ||
+    centralDirectorySize === MAX_VALUE_32BITS ||
+    filesCount === MAX_VALUE_16BITS;
 
   if (isZip64) {
     const l = -dv.byteLength - 20;
