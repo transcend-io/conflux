@@ -159,6 +159,10 @@ const fileStream = streamSaver.createWriteStream('conflux.zip');
 })();
 ```
 
+#### Large archives (Zip64)
+
+Archives over 4 GB, entries over 4 GB, and archives with 65,535 or more entries are written with [Zip64](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT) extensions as needed: 64-bit data descriptors, Zip64 extra fields in the central directory, and a Zip64 end of central directory record. Smaller archives keep the classic layout. Every entry declares `version needed to extract` 4.5, which all current unzip tools support.
+
 ### Reading ZIP files
 
 ```js
