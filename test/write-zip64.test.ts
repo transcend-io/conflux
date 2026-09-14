@@ -6,6 +6,7 @@ import {
   ZipTransformer,
   dataDescriptor,
   endOfCentralDirectory,
+  localZip64ExtraField,
   zip64ExtraField,
 } from '../src/write.js';
 
@@ -22,6 +23,11 @@ const MAX_UINT32 = 0xff_ff_ff_ff;
 const MAX_UINT32_BIG = BigInt(MAX_UINT32);
 const FOUR_GIB = BigInt(0x1_00_00_00_00);
 
+/** Every local header carries a 20-byte Zip64 extra; every descriptor is 24 bytes. */
+const LOCAL_ZIP64_EXTRA_LENGTH = 20;
+const DESCRIPTOR_LENGTH = 24;
+
+const SIG_LOCAL_FILE_HEADER = [0x50, 0x4b, 0x03, 0x04];
 const SIG_CENTRAL_DIRECTORY = [0x50, 0x4b, 0x01, 0x02];
 const SIG_END_OF_CENTRAL_DIRECTORY = [0x50, 0x4b, 0x05, 0x06];
 const SIG_ZIP64_END_OF_CENTRAL_DIRECTORY = [0x50, 0x4b, 0x06, 0x06];
@@ -161,15 +167,33 @@ async function writeBigArchive(size: bigint): Promise<{
 }
 
 describe('Writing - Zip64 record builders', () => {
-  it('data descriptor uses 32-bit sizes below the 4 GiB boundary', () => {
+  it('local zip64 extra field declares zero placeholder sizes', () => {
+    const extra = localZip64ExtraField();
+    const dv = dataView(extra);
+    assert.equal(extra.length, LOCAL_ZIP64_EXTRA_LENGTH);
+    assert.equal(dv.getUint16(0, true), 0x00_01, 'header id');
+    assert.equal(dv.getUint16(2, true), 16, 'data size');
+    assert.equal(dv.getBigUint64(4, true), BigInt(0), 'uncompressed size');
+    assert.equal(dv.getBigUint64(12, true), BigInt(0), 'compressed size');
+  });
+
+  it('data descriptor is always 64-bit, even below the 4 GiB boundary', () => {
     const size = MAX_UINT32_BIG - BigInt(1);
     const footer = dataDescriptor(0x12_34_56_78, size, size);
     const dv = dataView(footer);
-    assert.equal(footer.length, 16);
+    assert.equal(footer.length, DESCRIPTOR_LENGTH);
     assert.equal(dv.getUint32(0), 0x50_4b_07_08);
     assert.equal(dv.getUint32(4, true), 0x12_34_56_78);
-    assert.equal(dv.getUint32(8, true), MAX_UINT32 - 1);
-    assert.equal(dv.getUint32(12, true), MAX_UINT32 - 1);
+    assert.equal(dv.getBigUint64(8, true), size);
+    assert.equal(dv.getBigUint64(16, true), size);
+  });
+
+  it('data descriptor for an empty entry', () => {
+    const footer = dataDescriptor(0, BigInt(0), BigInt(0));
+    const dv = dataView(footer);
+    assert.equal(footer.length, DESCRIPTOR_LENGTH);
+    assert.equal(dv.getBigUint64(8, true), BigInt(0));
+    assert.equal(dv.getBigUint64(16, true), BigInt(0));
   });
 
   it('data descriptor uses 64-bit sizes at exactly 0xFFFFFFFF', () => {
@@ -334,16 +358,46 @@ describe('Writing - Zip64 archives', () => {
       position += chunk.length;
     }
 
-    const localHeaderLength = 30 + 'late.txt'.length;
+    const localHeaderLength = 30 + 'late.txt'.length + LOCAL_ZIP64_EXTRA_LENGTH;
     const dataLength = 'Hello Zip64\n'.length;
-    const descriptorLength = 16;
-    const cdStart = localHeaderLength + dataLength + descriptorLength;
+    const cdStart = localHeaderLength + dataLength + DESCRIPTOR_LENGTH;
     const cdLength = 46 + 'late.txt'.length + 12;
     assert.equal(
       tail.length,
       cdStart + cdLength + 56 + 20 + 22,
-      'layout: local header, data, 16-byte descriptor, central directory with 12-byte extra, zip64 EOCD, locator, EOCD',
+      'layout: local header with 20-byte extra, data, 24-byte descriptor, central directory with 12-byte extra, zip64 EOCD, locator, EOCD',
     );
+
+    assert.deepEqual(signatureAt(tail, 0), SIG_LOCAL_FILE_HEADER);
+    const local = dataView(tail.subarray(0, localHeaderLength));
+    assert.equal(local.getUint16(4, true), 45, 'local version needed');
+    assert.equal(local.getUint16(6, true), 0x08_08, 'descriptor + UTF-8 flags');
+    assert.equal(local.getUint32(18, true), 0, 'local compressed size is zero');
+    assert.equal(
+      local.getUint32(22, true),
+      0,
+      'local uncompressed size is zero',
+    );
+    assert.equal(
+      local.getUint16(28, true),
+      LOCAL_ZIP64_EXTRA_LENGTH,
+      'local extra field length',
+    );
+    const localExtraStart = 30 + 'late.txt'.length;
+    assert.equal(local.getUint16(localExtraStart, true), 0x00_01, 'zip64 id');
+    assert.equal(local.getUint16(localExtraStart + 2, true), 16);
+
+    const descriptor = dataView(
+      tail.subarray(cdStart - DESCRIPTOR_LENGTH, cdStart),
+    );
+    assert.equal(
+      descriptor.getUint32(0),
+      0x50_4b_07_08,
+      'descriptor signature',
+    );
+    assert.equal(descriptor.getBigUint64(8, true), BigInt(dataLength));
+    assert.equal(descriptor.getBigUint64(16, true), BigInt(dataLength));
+
     assert.deepEqual(signatureAt(tail, cdStart), SIG_CENTRAL_DIRECTORY);
     const cd = dataView(tail.subarray(cdStart, cdStart + cdLength));
     assert.equal(cd.getUint16(4, true), 45, 'version made by');
@@ -418,13 +472,17 @@ describe('Writing - Zip64 archives', () => {
         await writeBigArchive(MAX_UINT32_BIG);
       assert.ok(archiveSize > FOUR_GIB, 'archive crosses 4 GiB');
 
-      const bigHeaderLength = 30 + 'big.bin'.length;
+      const bigHeaderLength = 30 + 'big.bin'.length + LOCAL_ZIP64_EXTRA_LENGTH;
       const descriptor = segments.find(
         (segment) =>
           segment.offset === BigInt(bigHeaderLength) + MAX_UINT32_BIG,
       );
       if (!descriptor) throw new Error('data descriptor not found');
-      assert.equal(descriptor.bytes.length, 24, '64-bit data descriptor');
+      assert.equal(
+        descriptor.bytes.length,
+        DESCRIPTOR_LENGTH,
+        '64-bit data descriptor',
+      );
       const ddv = dataView(descriptor.bytes);
       assert.equal(ddv.getUint32(0), 0x50_4b_07_08);
       assert.equal(ddv.getBigUint64(8, true), MAX_UINT32_BIG);
@@ -444,7 +502,7 @@ describe('Writing - Zip64 archives', () => {
       assert.equal(entry.zip64, true, 'offset overflowed');
       assert.equal(
         entry.offset,
-        bigHeaderLength + MAX_UINT32 + 24,
+        bigHeaderLength + MAX_UINT32 + DESCRIPTOR_LENGTH,
         'offset read from zip64 extra',
       );
       assert.equal(
@@ -478,28 +536,40 @@ describe('Writing - Zip64 archives', () => {
   );
 
   (runBigFixtures ? it : it.skip)(
-    'entry just under 0xFFFFFFFF bytes stays classic while the archive goes zip64',
+    'entry just under 0xFFFFFFFF bytes keeps a classic central record while the archive goes zip64',
     async () => {
       const size = MAX_UINT32_BIG - BigInt(1);
       const { file, segments } = await writeBigArchive(size);
 
-      const bigHeaderLength = 30 + 'big.bin'.length;
+      const bigHeaderLength = 30 + 'big.bin'.length + LOCAL_ZIP64_EXTRA_LENGTH;
       const descriptor = segments.find(
         (segment) => segment.offset === BigInt(bigHeaderLength) + size,
       );
       if (!descriptor) throw new Error('data descriptor not found');
-      assert.equal(descriptor.bytes.length, 16, '32-bit data descriptor');
+      assert.equal(
+        descriptor.bytes.length,
+        DESCRIPTOR_LENGTH,
+        'descriptor is 64-bit regardless of size',
+      );
+      assert.equal(dataView(descriptor.bytes).getBigUint64(8, true), size);
 
       const it = Reader(file);
       let entry = (await it.next()).value as Entry;
       assert.equal(entry.name, 'big.bin');
-      assert.equal(entry.zip64, false, 'sizes and offset all fit in 32 bits');
+      assert.equal(
+        entry.zip64,
+        false,
+        'central record needs no zip64 extra: sizes and offset fit in 32 bits',
+      );
       assert.equal(entry.size, MAX_UINT32 - 1);
 
       entry = (await it.next()).value as Entry;
       assert.equal(entry.name, 'small.txt');
       assert.equal(entry.zip64, true, 'offset overflowed');
-      assert.equal(entry.offset, bigHeaderLength + MAX_UINT32 - 1 + 16);
+      assert.equal(
+        entry.offset,
+        bigHeaderLength + MAX_UINT32 - 1 + DESCRIPTOR_LENGTH,
+      );
       assert.equal(await entry.text(), 'after the big one\n');
       assert.ok((await it.next()).done);
     },

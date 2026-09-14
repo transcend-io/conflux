@@ -21,8 +21,12 @@ const SHIFT_32 = JSBI.BigInt(32);
 const ZIP_VERSION_45 = 0x2d;
 
 const LOCAL_FILE_HEADER_LENGTH = 30;
-const DATA_DESCRIPTOR_LENGTH = 16;
-const DATA_DESCRIPTOR_ZIP64_LENGTH = 24;
+/**
+ * Zip64 extended information extra field carried by every local file header:
+ * id (2) + data size (2) + uncompressed size (8) + compressed size (8).
+ */
+const LOCAL_ZIP64_EXTRA_FIELD_LENGTH = 20;
+const DATA_DESCRIPTOR_LENGTH = 24;
 const CENTRAL_DIRECTORY_RECORD_LENGTH = 46;
 const END_OF_CENTRAL_DIRECTORY_LENGTH = 22;
 const ZIP64_END_OF_CENTRAL_DIRECTORY_LENGTH = 56;
@@ -83,8 +87,28 @@ interface ZipObject {
 }
 
 /**
- * Build the data descriptor that trails an entry's data.
- * Uses 64-bit sizes when either size does not fit in 32 bits.
+ * Build the Zip64 extended information extra field for a local file header.
+ *
+ * The writer streams, so sizes are unknown when the local header is emitted
+ * and the real values go in the data descriptor. Per APPNOTE 4.3.9.2 a reader
+ * decides whether that descriptor carries 32- or 64-bit sizes by whether the
+ * local header has a Zip64 extra field, so every entry carries one (with zero
+ * placeholders) and every descriptor is 64-bit. This is the layout Info-ZIP
+ * `zip` and Python `zipfile` produce for unseekable output.
+ *
+ * @returns the encoded extra field
+ */
+export function localZip64ExtraField(): Uint8Array {
+  const extra = new Uint8Array(LOCAL_ZIP64_EXTRA_FIELD_LENGTH);
+  const dv = new DataView(extra.buffer);
+  dv.setUint16(0, 0x00_01, true);
+  dv.setUint16(2, LOCAL_ZIP64_EXTRA_FIELD_LENGTH - 4, true);
+  // uncompressed size (4..12) and compressed size (12..20) stay zero
+  return extra;
+}
+
+/**
+ * Build the 64-bit data descriptor that trails an entry's data.
  *
  * @param crc - CRC-32 of the entry data
  * @param compressedLength - compressed size of the entry
@@ -96,20 +120,12 @@ export function dataDescriptor(
   compressedLength: bigint,
   uncompressedLength: bigint,
 ): Uint8Array {
-  const zip64 = needsZip64(compressedLength) || needsZip64(uncompressedLength);
-  const footer = new Uint8Array(
-    zip64 ? DATA_DESCRIPTOR_ZIP64_LENGTH : DATA_DESCRIPTOR_LENGTH,
-  );
+  const footer = new Uint8Array(DATA_DESCRIPTOR_LENGTH);
   const dv = new DataView(footer.buffer);
   dv.setUint32(0, 0x50_4b_07_08);
   dv.setUint32(4, crc, true);
-  if (zip64) {
-    setUint64(dv, 8, compressedLength);
-    setUint64(dv, 16, uncompressedLength);
-  } else {
-    dv.setUint32(8, JSBI.toNumber(compressedLength), true);
-    dv.setUint32(12, JSBI.toNumber(uncompressedLength), true);
-  }
+  setUint64(dv, 8, compressedLength);
+  setUint64(dv, 16, uncompressedLength);
   return footer;
 }
 
@@ -264,7 +280,10 @@ export class ZipTransformer {
 
     // The File header DataView
     const hdv = new DataView(header.buffer);
-    const data = new Uint8Array(LOCAL_FILE_HEADER_LENGTH + nameBuf.length);
+    const localExtra = localZip64ExtraField();
+    const data = new Uint8Array(
+      LOCAL_FILE_HEADER_LENGTH + nameBuf.length + localExtra.length,
+    );
 
     // version needed 4.5 (Zip64), flags: bit 3 (data descriptor) + bit 11 (UTF-8 names)
     hdv.setUint16(0, ZIP_VERSION_45, true);
@@ -282,9 +301,13 @@ export class ZipTransformer {
       true,
     );
     hdv.setUint16(22, nameBuf.length, true);
+    // Local extra field length; flush() overwrites this slot of the shared
+    // header with the central directory's own extra field length.
+    hdv.setUint16(24, localExtra.length, true);
     data.set([80, 75, 3, 4]);
     data.set(header, 4);
     data.set(nameBuf, LOCAL_FILE_HEADER_LENGTH);
+    data.set(localExtra, LOCAL_FILE_HEADER_LENGTH + nameBuf.length);
 
     this.offset = JSBI.add(this.offset, JSBI.BigInt(data.length));
     ctrl.enqueue(data);
