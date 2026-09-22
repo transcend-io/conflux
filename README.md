@@ -182,14 +182,14 @@ Browser tests cannot hand a multi-gigabyte file to external tools, so the Zip64 
 
 #### Resuming an interrupted archive
 
-The writer can continue an archive whose leading bytes are already on disk, so a long download does not have to start over after a failure. Pass `onEntryComplete` to receive a JSON-serializable checkpoint after each entry's data descriptor, and later seed a fresh `Writer` with `resumeFrom` to pick up where the previous one stopped.
+The writer can continue an archive whose leading bytes are already on disk, so a long download does not have to start over after a failure. Pass `onEntryComplete` to receive a checkpoint after each entry's data descriptor (offsets and sizes are `bigint`, structured-clone friendly for IndexedDB), and later seed a fresh `Writer` with `resumeFrom` to pick up where the previous one stopped.
 
 ```js
 import { Writer } from '@transcend-io/conflux';
 
 // First attempt: record checkpoints as entries finish.
 const checkpoints = [];
-let archiveOffset = '0';
+let archiveOffset = 0n;
 const writer = new Writer(undefined, {
   onEntryComplete(checkpoint, offset) {
     checkpoints.push(checkpoint);

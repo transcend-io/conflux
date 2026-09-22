@@ -73,18 +73,23 @@ export interface ZipTransformerEntry {
 
 /**
  * Everything the writer needs to re-emit a completed entry's central
- * directory record without having its bytes. Plain JSON: bigints are decimal
- * strings so a checkpoint can round-trip through IndexedDB or a server.
+ * directory record without having its bytes. Offsets and sizes are `bigint`,
+ * matching the writer's internal counters; structured clone (e.g. IndexedDB)
+ * preserves them. JSON needs a bigint↔string replacer/reviver.
  */
 export interface ZipEntryCheckpoint {
   /** entry name as written, including a trailing `/` for directories */
   name: string;
-  /** byte offset of the local file header, decimal string */
-  offset: string;
-  /** bytes of entry data written after the local header, decimal string */
-  compressedLength: string;
-  /** uncompressed size, decimal string (equal to compressedLength: STORE only) */
-  uncompressedLength: string;
+  /** byte offset of the local file header */
+  offset: bigint;
+  /**
+   * Bytes of entry data written after the local header. Named for the ZIP
+   * "compressed size" field; this writer only uses STORE (method 0), so the
+   * value always equals {@link uncompressedLength}.
+   */
+  compressedLength: bigint;
+  /** Uncompressed size (always equal to compressedLength under STORE). */
+  uncompressedLength: bigint;
   /** CRC-32 of the entry data, 0 for directories */
   crc32: number;
   /** MS-DOS time field as written in the local header */
@@ -98,10 +103,10 @@ export interface ZipEntryCheckpoint {
 /** Archive position and completed entries to seed a resumed writer with. */
 export interface ZipCheckpoint {
   /**
-   * Byte offset the next local file header will be written at, decimal
-   * string. Must equal the end of the last completed entry's data descriptor.
+   * Byte offset the next local file header will be written at. Must equal the
+   * end of the last completed entry's data descriptor.
    */
-  offset: string;
+  offset: bigint;
   entries: ZipEntryCheckpoint[];
 }
 
@@ -118,7 +123,7 @@ export interface ZipTransformerOptions {
    * persist checkpoints should wait for the sink to accept those bytes before
    * treating the entry as durable.
    */
-  onEntryComplete?: (entry: ZipEntryCheckpoint, archiveOffset: string) => void;
+  onEntryComplete?: (entry: ZipEntryCheckpoint, archiveOffset: bigint) => void;
 }
 
 interface ZipObject {
@@ -168,8 +173,6 @@ const writeHeaderPrefix = (
 const zipObjectFromCheckpoint = (checkpoint: ZipEntryCheckpoint): ZipObject => {
   const nameBuf = encoder.encode(checkpoint.name);
   const header = new Uint8Array(26);
-  const compressedLength = JSBI.BigInt(checkpoint.compressedLength);
-  const uncompressedLength = JSBI.BigInt(checkpoint.uncompressedLength);
   writeHeaderPrefix(
     header,
     checkpoint.dosTime,
@@ -179,15 +182,15 @@ const zipObjectFromCheckpoint = (checkpoint: ZipEntryCheckpoint): ZipObject => {
   );
   const hdv = new DataView(header.buffer);
   hdv.setUint32(10, checkpoint.crc32, true);
-  hdv.setUint32(14, clampUint32(compressedLength), true);
-  hdv.setUint32(18, clampUint32(uncompressedLength), true);
+  hdv.setUint32(14, clampUint32(checkpoint.compressedLength), true);
+  hdv.setUint32(18, clampUint32(checkpoint.uncompressedLength), true);
   return {
     directory: checkpoint.directory,
     nameBuf,
-    offset: JSBI.BigInt(checkpoint.offset),
+    offset: checkpoint.offset,
     comment: encoder.encode(checkpoint.comment),
-    compressedLength,
-    uncompressedLength,
+    compressedLength: checkpoint.compressedLength,
+    uncompressedLength: checkpoint.uncompressedLength,
     header,
   };
 };
@@ -204,9 +207,9 @@ const checkpointFromZipObject = (
   );
   return {
     name,
-    offset: zipObject.offset.toString(),
-    compressedLength: zipObject.compressedLength.toString(),
-    uncompressedLength: zipObject.uncompressedLength.toString(),
+    offset: zipObject.offset,
+    compressedLength: zipObject.compressedLength,
+    uncompressedLength: zipObject.uncompressedLength,
     crc32: zipObject.crc?.get() ?? 0,
     dosTime: hdv.getUint16(6, true),
     dosDate: hdv.getUint16(8, true),
@@ -375,7 +378,7 @@ export class ZipTransformer {
         }
         this.files[checkpoint.name] = zipObjectFromCheckpoint(checkpoint);
       }
-      this.offset = JSBI.BigInt(resumeFrom.offset);
+      this.offset = resumeFrom.offset;
     }
   }
 
@@ -490,7 +493,7 @@ export class ZipTransformer {
 
     this.onEntryComplete?.(
       checkpointFromZipObject(name, zipObject),
-      this.offset.toString(),
+      this.offset,
     );
   }
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { assert } from '@esm-bundle/chai';
 
 import { Reader, Writer } from '../src/index.js';
@@ -31,7 +32,7 @@ const ENTRIES: ZipTransformerEntry[] = [
 interface WriteResult {
   bytes: Uint8Array;
   checkpoints: ZipEntryCheckpoint[];
-  offsets: string[];
+  offsets: bigint[];
 }
 
 const entrySource = (
@@ -39,7 +40,7 @@ const entrySource = (
 ): ReadableStream<ZipTransformerEntry> =>
   new ReadableStream<ZipTransformerEntry>({
     start(ctrl) {
-      for (const entry of entries) ctrl.enqueue(entry);
+      for (const entry of entries.values()) ctrl.enqueue(entry);
       ctrl.close();
     },
   });
@@ -50,7 +51,7 @@ const writeAll = async (
   options: ZipTransformerOptions = {},
 ): Promise<WriteResult> => {
   const checkpoints: ZipEntryCheckpoint[] = [];
-  const offsets: string[] = [];
+  const offsets: bigint[] = [];
   const writer = new Writer(undefined, {
     ...options,
     onEntryComplete: (checkpoint, archiveOffset) => {
@@ -65,29 +66,6 @@ const writeAll = async (
   return { bytes, checkpoints, offsets };
 };
 
-const concat = (a: Uint8Array, b: Uint8Array): Uint8Array<ArrayBuffer> => {
-  const out = new Uint8Array(a.length + b.length);
-  out.set(a);
-  out.set(b, a.length);
-  return out;
-};
-
-const lastOf = <T>(values: T[]): T => {
-  const value = values.at(-1);
-  if (value === undefined) {
-    throw new Error('expected a non-empty array');
-  }
-  return value;
-};
-
-const at = <T>(values: T[], index: number): T => {
-  const value = values[index];
-  if (value === undefined) {
-    throw new Error(`expected an element at index ${String(index)}`);
-  }
-  return value;
-};
-
 describe('Writer resume', () => {
   it('reports a checkpoint after every entry with the running archive offset', async () => {
     const { bytes, checkpoints, offsets } = await writeAll(ENTRIES);
@@ -97,23 +75,23 @@ describe('Writer resume', () => {
       checkpoints.map((c) => c.name),
       ['first.txt', 'nested/second.txt', 'empty-dir/', 'third.txt'],
     );
-    const first = at(checkpoints, 0);
-    assert.equal(first.offset, '0');
-    assert.equal(first.compressedLength, '16');
-    assert.equal(first.uncompressedLength, '16');
+    const first = checkpoints[0]!;
+    assert.equal(first.offset, 0n);
+    assert.equal(first.compressedLength, 16n);
+    assert.equal(first.uncompressedLength, 16n);
     assert.notEqual(first.crc32, 0);
-    assert.equal(at(checkpoints, 1).comment, 'note');
-    assert.isTrue(at(checkpoints, 2).directory);
-    assert.equal(at(checkpoints, 2).crc32, 0);
+    assert.equal(checkpoints[1]!.comment, 'note');
+    assert.isTrue(checkpoints[2]!.directory);
+    assert.equal(checkpoints[2]!.crc32, 0);
 
     // each checkpoint's offset is the previous archiveOffset
     for (let index = 1; index < checkpoints.length; index += 1) {
-      assert.equal(at(checkpoints, index).offset, at(offsets, index - 1));
+      assert.equal(checkpoints[index]!.offset, offsets[index - 1]);
     }
     // the last archive offset is where the central directory begins
-    const eocd = bytes.length - 22;
+    const eocd = bytes.byteLength - 22;
     const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-    assert.equal(String(dv.getUint32(eocd + 16, true)), lastOf(offsets));
+    assert.equal(BigInt(dv.getUint32(eocd + 16, true)), offsets.at(-1));
   });
 
   it('produces a byte-identical archive when resumed after a completed entry', async () => {
@@ -121,7 +99,7 @@ describe('Writer resume', () => {
 
     // First pass: write the first two entries, capture the checkpoint.
     const firstPass = await writeAll(ENTRIES.slice(0, 2));
-    const resumeOffset = lastOf(firstPass.offsets);
+    const resumeOffset = firstPass.offsets.at(-1)!;
     // The bytes the sink would have on disk: everything up to the last
     // completed data descriptor, excluding the central directory.
     const onDisk = firstPass.bytes.subarray(0, Number(resumeOffset));
@@ -131,12 +109,16 @@ describe('Writer resume', () => {
       resumeFrom: { offset: resumeOffset, entries: firstPass.checkpoints },
     });
 
-    const resumed = concat(onDisk, secondPass.bytes);
-    assert.equal(resumed.length, single.bytes.length);
+    const resumed = new Uint8Array(
+      onDisk.byteLength + secondPass.bytes.byteLength,
+    );
+    resumed.set(onDisk);
+    resumed.set(secondPass.bytes, onDisk.byteLength);
+    assert.equal(resumed.byteLength, single.bytes.byteLength);
     assert.deepEqual([...resumed], [...single.bytes]);
 
     // the resumed writer's checkpoints continue from the seed
-    assert.equal(at(secondPass.checkpoints, 0).offset, resumeOffset);
+    assert.equal(secondPass.checkpoints[0]!.offset, resumeOffset);
     assert.deepEqual(
       [...firstPass.checkpoints, ...secondPass.checkpoints],
       single.checkpoints,
@@ -155,33 +137,34 @@ describe('Writer resume', () => {
       'empty-dir/',
       'third.txt',
     ]);
-    assert.equal(at(bodies, 0), 'first file body\n');
-    assert.equal(at(bodies, 3), 'third\n');
+    assert.equal(bodies[0], 'first file body\n');
+    assert.equal(bodies[3], 'third\n');
   });
 
-  it('round-trips checkpoints through JSON', async () => {
+  it('round-trips checkpoints through structured clone', async () => {
     const firstPass = await writeAll(ENTRIES.slice(0, 1));
-    const serialized = JSON.stringify({
-      offset: at(firstPass.offsets, 0),
+    const resumeFrom: ZipCheckpoint = structuredClone({
+      offset: firstPass.offsets[0]!,
       entries: firstPass.checkpoints,
     });
-    const resumeFrom = JSON.parse(serialized) as ZipCheckpoint;
 
     const secondPass = await writeAll(ENTRIES.slice(1), { resumeFrom });
     const single = await writeAll(ENTRIES);
-    const resumed = concat(
-      firstPass.bytes.subarray(0, Number(at(firstPass.offsets, 0))),
-      secondPass.bytes,
+    const prefix = firstPass.bytes.subarray(0, Number(firstPass.offsets[0]));
+    const resumed = new Uint8Array(
+      prefix.byteLength + secondPass.bytes.byteLength,
     );
+    resumed.set(prefix);
+    resumed.set(secondPass.bytes, prefix.byteLength);
     assert.deepEqual([...resumed], [...single.bytes]);
   });
 
   it('rejects a checkpoint that repeats an entry name', () => {
     const entry: ZipEntryCheckpoint = {
       name: 'dup.txt',
-      offset: '0',
-      compressedLength: '1',
-      uncompressedLength: '1',
+      offset: 0n,
+      compressedLength: 1n,
+      uncompressedLength: 1n,
       crc32: 1,
       dosTime: 0,
       dosDate: 0,
@@ -191,7 +174,7 @@ describe('Writer resume', () => {
     assert.throws(
       () =>
         new Writer(undefined, {
-          resumeFrom: { offset: '100', entries: [entry, entry] },
+          resumeFrom: { offset: 100n, entries: [entry, entry] },
         }),
       /Duplicate entry/,
     );
@@ -201,19 +184,15 @@ describe('Writer resume', () => {
     const firstPass = await writeAll(ENTRIES.slice(0, 1));
     const writer = new Writer(undefined, {
       resumeFrom: {
-        offset: at(firstPass.offsets, 0),
+        offset: firstPass.offsets[0]!,
         entries: firstPass.checkpoints,
       },
     });
     let failure: unknown;
     try {
-      const reader = entrySource(ENTRIES.slice(0, 1))
+      await entrySource(ENTRIES.slice(0, 1))
         .pipeThrough(writer)
-        .getReader();
-      for (;;) {
-        const { done } = await reader.read();
-        if (done) break;
-      }
+        .pipeTo(new WritableStream());
     } catch (error) {
       failure = error;
     }
