@@ -180,6 +180,37 @@ Browser tests cannot hand a multi-gigabyte file to external tools, so the Zip64 
    - `bsdtar -tvf fixture.zip` (seekable) and `cat fixture.zip | bsdtar -xOf - > /dev/null` (forward-only streaming, no central directory access).
    - Finally open the >4 GB fixtures in Windows Explorer and macOS Archive Utility, the targets that cannot be scripted from Linux.
 
+#### Resuming an interrupted archive
+
+The writer can continue an archive whose leading bytes are already on disk, so a long download does not have to start over after a failure. Pass `onEntryComplete` to receive a JSON-serializable checkpoint after each entry's data descriptor, and later seed a fresh `Writer` with `resumeFrom` to pick up where the previous one stopped.
+
+```js
+import { Writer } from '@transcend-io/conflux';
+
+// First attempt: record checkpoints as entries finish.
+const checkpoints = [];
+let archiveOffset = '0';
+const writer = new Writer(undefined, {
+  onEntryComplete(checkpoint, offset) {
+    checkpoints.push(checkpoint);
+    archiveOffset = offset;
+  },
+});
+
+// ... the sink fails after some entries were written ...
+
+// Resume: truncate the on-disk file to `archiveOffset`, then write the
+// remaining entries with a writer that already knows about the finished ones.
+// Every remaining entry must have an explicit `lastModified` so the output
+// matches what a single pass would have produced.
+const resumed = new Writer(undefined, {
+  resumeFrom: { offset: archiveOffset, entries: checkpoints },
+});
+remainingEntries.pipeThrough(resumed).pipeTo(fileStreamOpenedAtArchiveOffset);
+```
+
+A checkpoint is only safe to persist once the sink has accepted every byte up to the reported `offset`; the callback fires when the writer enqueues the descriptor, not when the bytes land on disk. Resumed archives are byte-identical to a single-pass archive of the same entries.
+
 ### Reading ZIP files
 
 ```js

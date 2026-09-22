@@ -71,6 +71,56 @@ export interface ZipTransformerEntry {
   stream?: () => ReadableStream<Uint8Array>;
 }
 
+/**
+ * Everything the writer needs to re-emit a completed entry's central
+ * directory record without having its bytes. Plain JSON: bigints are decimal
+ * strings so a checkpoint can round-trip through IndexedDB or a server.
+ */
+export interface ZipEntryCheckpoint {
+  /** entry name as written, including a trailing `/` for directories */
+  name: string;
+  /** byte offset of the local file header, decimal string */
+  offset: string;
+  /** bytes of entry data written after the local header, decimal string */
+  compressedLength: string;
+  /** uncompressed size, decimal string (equal to compressedLength: STORE only) */
+  uncompressedLength: string;
+  /** CRC-32 of the entry data, 0 for directories */
+  crc32: number;
+  /** MS-DOS time field as written in the local header */
+  dosTime: number;
+  /** MS-DOS date field as written in the local header */
+  dosDate: number;
+  directory: boolean;
+  comment: string;
+}
+
+/** Archive position and completed entries to seed a resumed writer with. */
+export interface ZipCheckpoint {
+  /**
+   * Byte offset the next local file header will be written at, decimal
+   * string. Must equal the end of the last completed entry's data descriptor.
+   */
+  offset: string;
+  entries: ZipEntryCheckpoint[];
+}
+
+export interface ZipTransformerOptions {
+  /**
+   * Continue an archive whose leading bytes are already on disk. The writer
+   * starts at `resumeFrom.offset`, treats `resumeFrom.entries` as written, and
+   * emits them in the central directory when the stream closes.
+   */
+  resumeFrom?: ZipCheckpoint;
+  /**
+   * Fired after an entry's data descriptor has been enqueued, with the
+   * checkpoint for that entry and the archive offset after it. Callers that
+   * persist checkpoints should wait for the sink to accept those bytes before
+   * treating the entry as durable.
+   */
+  onEntryComplete?: (entry: ZipEntryCheckpoint, archiveOffset: string) => void;
+}
+
 interface ZipObject {
   directory: boolean;
   nameBuf: Uint8Array;
@@ -85,6 +135,85 @@ interface ZipObject {
   header: Uint8Array;
   crc?: Crc32;
 }
+
+const decoder = new TextDecoder();
+
+/** flags: bit 3 (data descriptor) + bit 11 (UTF-8 names) */
+const GENERAL_PURPOSE_FLAGS = 0x08_08;
+
+/**
+ * Write the fixed part of a local file header (bytes 4..30) into `header`.
+ * Sizes and CRC are patched in later; only the fields known up front are set.
+ */
+const writeHeaderPrefix = (
+  header: Uint8Array,
+  dosTime: number,
+  dosDate: number,
+  nameLength: number,
+  extraLength: number,
+): void => {
+  const hdv = new DataView(header.buffer, header.byteOffset, header.byteLength);
+  hdv.setUint16(0, ZIP_VERSION_45, true);
+  hdv.setUint16(2, GENERAL_PURPOSE_FLAGS, true);
+  hdv.setUint16(6, dosTime, true);
+  hdv.setUint16(8, dosDate, true);
+  hdv.setUint16(22, nameLength, true);
+  hdv.setUint16(24, extraLength, true);
+};
+
+/**
+ * Rebuild a completed entry from its checkpoint so the central directory can
+ * be emitted without the entry bytes.
+ */
+const zipObjectFromCheckpoint = (checkpoint: ZipEntryCheckpoint): ZipObject => {
+  const nameBuf = encoder.encode(checkpoint.name);
+  const header = new Uint8Array(26);
+  const compressedLength = JSBI.BigInt(checkpoint.compressedLength);
+  const uncompressedLength = JSBI.BigInt(checkpoint.uncompressedLength);
+  writeHeaderPrefix(
+    header,
+    checkpoint.dosTime,
+    checkpoint.dosDate,
+    nameBuf.length,
+    LOCAL_ZIP64_EXTRA_FIELD_LENGTH,
+  );
+  const hdv = new DataView(header.buffer);
+  hdv.setUint32(10, checkpoint.crc32, true);
+  hdv.setUint32(14, clampUint32(compressedLength), true);
+  hdv.setUint32(18, clampUint32(uncompressedLength), true);
+  return {
+    directory: checkpoint.directory,
+    nameBuf,
+    offset: JSBI.BigInt(checkpoint.offset),
+    comment: encoder.encode(checkpoint.comment),
+    compressedLength,
+    uncompressedLength,
+    header,
+  };
+};
+
+/** Serialize a completed entry for a checkpoint ledger. */
+const checkpointFromZipObject = (
+  name: string,
+  zipObject: ZipObject,
+): ZipEntryCheckpoint => {
+  const hdv = new DataView(
+    zipObject.header.buffer,
+    zipObject.header.byteOffset,
+    zipObject.header.byteLength,
+  );
+  return {
+    name,
+    offset: zipObject.offset.toString(),
+    compressedLength: zipObject.compressedLength.toString(),
+    uncompressedLength: zipObject.uncompressedLength.toString(),
+    crc32: zipObject.crc?.get() ?? 0,
+    dosTime: hdv.getUint16(6, true),
+    dosDate: hdv.getUint16(8, true),
+    directory: zipObject.directory,
+    comment: decoder.decode(zipObject.comment),
+  };
+};
 
 /**
  * Build the Zip64 extended information extra field for a local file header.
@@ -228,12 +357,26 @@ export function endOfCentralDirectory(
 export class ZipTransformer {
   files: Record<string, ZipObject>;
   offset: bigint;
+  private readonly onEntryComplete: ZipTransformerOptions['onEntryComplete'];
 
-  constructor() {
+  constructor({ resumeFrom, onEntryComplete }: ZipTransformerOptions = {}) {
     /* The files zipped */
     this.files = Object.create(null) as Record<string, ZipObject>;
     /* The current position of the zipped output stream, in bytes */
     this.offset = JSBI.BigInt(0);
+    this.onEntryComplete = onEntryComplete;
+
+    if (resumeFrom) {
+      for (const checkpoint of resumeFrom.entries) {
+        if (this.files[checkpoint.name]) {
+          throw new Error(
+            `Duplicate entry in resume checkpoint: ${checkpoint.name}`,
+          );
+        }
+        this.files[checkpoint.name] = zipObjectFromCheckpoint(checkpoint);
+      }
+      this.offset = JSBI.BigInt(resumeFrom.offset);
+    }
   }
 
   /**
@@ -285,25 +428,17 @@ export class ZipTransformer {
       LOCAL_FILE_HEADER_LENGTH + nameBuf.length + localExtra.length,
     );
 
-    // version needed 4.5 (Zip64), flags: bit 3 (data descriptor) + bit 11 (UTF-8 names)
-    hdv.setUint16(0, ZIP_VERSION_45, true);
-    hdv.setUint16(2, 0x08_08, true);
-    hdv.setUint16(
-      6,
-      (((date.getHours() << 6) | date.getMinutes()) << 5) |
-        (date.getSeconds() / 2),
-      true,
-    );
-    hdv.setUint16(
-      8,
-      ((((date.getFullYear() - 1980) << 4) | (date.getMonth() + 1)) << 5) |
-        date.getDate(),
-      true,
-    );
-    hdv.setUint16(22, nameBuf.length, true);
     // Local extra field length; flush() overwrites this slot of the shared
     // header with the central directory's own extra field length.
-    hdv.setUint16(24, localExtra.length, true);
+    writeHeaderPrefix(
+      header,
+      (((date.getHours() << 6) | date.getMinutes()) << 5) |
+        (date.getSeconds() / 2),
+      ((((date.getFullYear() - 1980) << 4) | (date.getMonth() + 1)) << 5) |
+        date.getDate(),
+      nameBuf.length,
+      localExtra.length,
+    );
     data.set([80, 75, 3, 4]);
     data.set(header, 4);
     data.set(nameBuf, LOCAL_FILE_HEADER_LENGTH);
@@ -352,6 +487,11 @@ export class ZipTransformer {
     );
 
     ctrl.enqueue(footer);
+
+    this.onEntryComplete?.(
+      checkpointFromZipObject(name, zipObject),
+      this.offset.toString(),
+    );
   }
 
   /**
@@ -433,8 +573,12 @@ export class ZipTransformer {
 export class Writer extends TransformStream<ZipTransformerEntry, Uint8Array> {
   /**
    * @param queueingStrategy - determines the number of entries being written before backpressure applied
+   * @param options - resume seed and entry-complete callback, see {@link ZipTransformerOptions}
    */
-  constructor(queueingStrategy?: QueuingStrategy<ZipTransformerEntry>) {
-    super(new ZipTransformer(), queueingStrategy);
+  constructor(
+    queueingStrategy?: QueuingStrategy<ZipTransformerEntry>,
+    options: ZipTransformerOptions = {},
+  ) {
+    super(new ZipTransformer(options), queueingStrategy);
   }
 }
